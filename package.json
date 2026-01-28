@@ -1,0 +1,23 @@
+{
+  "name": "rejestr-projektow",
+  "version": "1.0.0",
+  "description": "Rejestr projektów: logowanie, projekty handlowca, wgląd projektanta przez przypisania.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "test": "NODE_ENV=test jest --runInBand"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.17.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
+  }
+}

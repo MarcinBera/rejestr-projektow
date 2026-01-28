@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Rejestr projektów - logowanie</title>
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+  <div class="container">
+    <h1>Rejestr projektów</h1>
+
+    <% if (err) { %><div class="alert alert-err"><%= err %></div><% } %>
+    <% if (msg) { %><div class="alert alert-ok"><%= msg %></div><% } %>
+
+    <div class="card">
+      <h2>Logowanie</h2>
+      <form method="POST" action="/login">
+        <label>E-mail</label>
+        <input name="email" type="email" required />
+
+        <label>Hasło</label>
+        <input name="password" type="password" required />
+
+        <button class="btn" type="submit">Zaloguj</button>
+      </form>
+
+      <div class="spacer"></div>
+      <a href="/register">Utwórz konto</a>
+    </div>
+  </div>
+</body>
+</html>

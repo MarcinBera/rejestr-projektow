@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Rejestr projektów - projektanci</title>
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <strong>Twoi projektanci</strong>
+      <span class="muted">| <%= user.firstName %> <%= user.lastName %></span>
+    </div>
+    <div class="topbar-right">
+      <a class="linkbtn" href="/projects">Powrót</a>
+      <form method="POST" action="/logout" style="display:inline;">
+        <button class="linkbtn" type="submit">Wyloguj</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+    <% if (err) { %><div class="alert alert-err"><%= err %></div><% } %>
+    <% if (msg) { %><div class="alert alert-ok"><%= msg %></div><% } %>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Przypisani projektanci</h2>
+        <% if (!assigned.length) { %>
+          <p>Brak przypisanych projektantów.</p>
+        <% } else { %>
+          <table class="table">
+            <thead><tr><th>Projektant</th><th>E-mail</th><th></th></tr></thead>
+            <tbody>
+              <% assigned.forEach(d => { %>
+                <tr>
+                  <td><%= d.first_name %> <%= d.last_name %></td>
+                  <td><%= d.email %></td>
+                  <td>
+                    <form method="POST" action="/assignments/remove">
+                      <input type="hidden" name="designerId" value="<%= d.id %>"/>
+                      <button class="linkbtn" type="submit">Odepnij</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+
+      <div class="card">
+        <h2>Dodaj projektanta</h2>
+        <% if (!available.length) { %>
+          <p>Brak dostępnych projektantów do dodania.</p>
+        <% } else { %>
+          <form method="POST" action="/assignments/add">
+            <label>Wybierz projektanta</label>
+            <select name="designerId" required>
+              <option value="">-- wybierz --</option>
+              <% available.forEach(d => { %>
+                <option value="<%= d.id %>"><%= d.last_name %> <%= d.first_name %> (<%= d.email %>)</option>
+              <% }) %>
+            </select>
+            <button class="btn" type="submit">Dodaj</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

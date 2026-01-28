@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Rejestr projektów - rejestracja</title>
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+  <div class="container">
+    <h1>Rejestr projektów</h1>
+
+    <% if (err) { %><div class="alert alert-err"><%= err %></div><% } %>
+    <% if (msg) { %><div class="alert alert-ok"><%= msg %></div><% } %>
+
+    <div class="card">
+      <h2>Tworzenie konta</h2>
+      <form method="POST" action="/register" id="regForm">
+        <div class="grid2">
+          <div>
+            <label>Imię</label>
+            <input name="firstName" required />
+          </div>
+          <div>
+            <label>Nazwisko</label>
+            <input name="lastName" required />
+          </div>
+        </div>
+
+        <label>Adres e-mail</label>
+        <input name="email" type="email" required />
+
+        <label>Rola</label>
+        <div class="radioRow">
+          <label><input type="radio" name="role" value="sales" required /> Handlowiec</label>
+          <label><input type="radio" name="role" value="designer" required /> Projektant</label>
+        </div>
+
+        <div id="salesNumberBox" style="display:none;">
+          <label>Numer handlowca (wymagany dla handlowca)</label>
+          <input name="salesNumber" />
+        </div>
+
+        <label>Hasło (min 6 znaków)</label>
+        <input name="password" type="password" required />
+
+        <button class="btn" type="submit">Utwórz konto</button>
+      </form>
+
+      <div class="spacer"></div>
+      <a href="/login">Powrót do logowania</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('regForm');
+    const salesBox = document.getElementById('salesNumberBox');
+    form.addEventListener('change', () => {
+      const role = form.querySelector('input[name="role"]:checked')?.value;
+      salesBox.style.display = (role === 'sales') ? 'block' : 'none';
+    });
+  </script>
+</body>
+</html>

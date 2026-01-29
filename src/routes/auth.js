@@ -5,7 +5,7 @@ const { getDb } = require("../db/db");
 const router = express.Router();
 
 router.get("/login", (req, res) => {
-  if (req.session.user) return res.redirect("/projects");
+  if (req.session.user) return res.redirect("/calculations");
   res.render("login");
 });
 
@@ -39,11 +39,11 @@ router.post("/login", (req, res) => {
   };
 
   req.session.msg = "Zalogowano.";
-  return res.redirect("/projects");
+  return res.redirect("/calculations");
 });
 
 router.get("/register", (req, res) => {
-  if (req.session.user) return res.redirect("/projects");
+  if (req.session.user) return res.redirect("/calculations");
   res.render("register");
 });
 

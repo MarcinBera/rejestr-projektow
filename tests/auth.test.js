@@ -28,6 +28,6 @@ describe("Auth", () => {
       .send({ email: "jan@example.com", password: "abcdef" });
 
     expect(r2.status).toBe(302);
-    expect(r2.headers.location).toBe("/projects");
+    expect(r2.headers.location).toBe("/calculations");
   });
 });

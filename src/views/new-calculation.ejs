@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Nowa kalkulacja</title>
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <strong>Nowa kalkulacja</strong>
+      <span class="muted">| <%= performerName %></span>
+    </div>
+    <div class="topbar-right">
+      <a class="linkbtn" href="/calculations">Powrót</a>
+      <form method="POST" action="/logout" style="display:inline;">
+        <button class="linkbtn" type="submit">Wyloguj</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+    <% if (err) { %><div class="alert alert-err"><%= err %></div><% } %>
+
+    <div class="card">
+      <form method="POST" action="/calculations/new" id="calcForm">
+        <div class="grid2">
+          <div>
+            <label>NIP (z ręki)</label>
+            <input name="nip" id="nip" required placeholder="10 cyfr" />
+            <button class="btn" type="button" id="fetchBtn" style="margin-top:10px;">Pobierz dane firmy po NIP</button>
+            <div id="nipInfo" class="muted" style="margin-top:8px;"></div>
+          </div>
+          <div>
+            <label>Data kalkulacji (auto)</label>
+            <input name="calculationDate" value="<%= calculationDate %>" readonly />
+            <label>Wykonawca kalkulacji (auto)</label>
+            <input value="<%= performerName %>" readonly />
+          </div>
+        </div>
+
+        <!-- <% if (user.role === 'designer') { %>
+  <label>Handlowiec (właściciel kalkulacji)</label>
+<% } %> -->
+
+
+        <label>Nazwa klienta (po NIP)</label>
+        <input name="companyName" id="companyName" readonly />
+
+        <label>Adres (po NIP) (opcjonalnie)</label>
+        <input name="companyAddress" id="companyAddress" readonly />
+
+        <div class="grid2">
+          <div>
+            <label>Osoba kontaktowa (z ręki)</label>
+            <input name="contactPerson" required />
+          </div>
+          <div>
+            <label>E-mail (z ręki)</label>
+            <input name="contactEmail" type="email" required />
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label>Oddział / miasto (z ręki)</label>
+            <input name="branchCity" required />
+          </div>
+          <div>
+            <label>Województwo (z ręki)</label>
+            <input name="voivodeship" required />
+          </div>
+        </div>
+
+        <label>Klient docelowy (z ręki)</label>
+        <input name="endCustomer" required />
+
+        <label>Nowy klient (TAK/NIE)</label>
+        <select name="isNewCustomer" required>
+          <option value="0">NIE</option>
+          <option value="1">TAK</option>
+        </select>
+
+        <label>Rodzaj produktu (lista)</label>
+        <select name="productType" required>
+          <option value="">-- wybierz --</option>
+          <% PRODUCTS.forEach(p => { %>
+            <option value="<%= p %>"><%= p %></option>
+          <% }) %>
+        </select>
+
+        <label>Szczegóły produktu (z ręki)</label>
+        <textarea name="productDetails" required></textarea>
+
+        <label>Status projektu (lista)</label>
+        <select name="status" required>
+          <option value="">-- wybierz --</option>
+          <% STATUS.forEach(s => { %>
+            <option value="<%= s.id %>"><%= s.id %>. <%= s.name %></option>
+          <% }) %>
+        </select>
+
+        <h3 style="margin-top:16px;">Do wypełnienia później (opcjonalne)</h3>
+        <div class="grid2">
+          <div>
+            <label>Obrót</label>
+            <input name="turnover" placeholder="np. 12345.67 (może być puste)" />
+          </div>
+          <div>
+            <label>Rodzaj oferty</label>
+            <select name="offerType">
+              <option value="">(puste)</option>
+              <option value="Podstawowa">Podstawowa</option>
+              <option value="Uproszczona">Uproszczona</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn" type="submit">Zatwierdź</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+  // Upewniamy się, że DOM już jest
+  document.addEventListener("DOMContentLoaded", () => {
+    const nipEl = document.getElementById("nip");
+    const fetchBtn = document.getElementById("fetchBtn");
+    const infoEl = document.getElementById("nipInfo");
+    const nameEl = document.getElementById("companyName");
+    const addrEl = document.getElementById("companyAddress");
+
+    if (!nipEl || !fetchBtn || !infoEl || !nameEl || !addrEl) {
+      console.error("Brakuje elementów DOM (sprawdź id: nip, fetchBtn, nipInfo, companyName, companyAddress)");
+      return;
+    }
+
+    function normNip(x) { return String(x || "").replace(/[\s-]/g, ""); }
+
+    async function fetchByNip() {
+      const nip = normNip(nipEl.value);
+
+      infoEl.textContent = "";
+      nameEl.value = "";
+      addrEl.value = "";
+
+      if (!/^\d{10}$/.test(nip)) {
+        infoEl.textContent = "NIP musi mieć 10 cyfr.";
+        return;
+      }
+
+      infoEl.textContent = "Pobieram dane z MF...";
+
+      try {
+        const r = await fetch(`/api/mf/nip/${nip}`, { headers: { "Accept": "application/json" } });
+        const data = await r.json();
+
+        if (!data.ok) {
+          infoEl.textContent = data.error || "Nie udało się pobrać danych.";
+          return;
+        }
+
+        nameEl.value = data.companyName || "";
+        addrEl.value = data.companyAddress || "";
+
+        // ma być z NIP => readonly zostaje
+        nameEl.setAttribute("readonly", "readonly");
+        addrEl.setAttribute("readonly", "readonly");
+
+        infoEl.textContent = data.companyName ? "Dane pobrane." : "Brak danych w MF dla tego NIP.";
+      } catch (e) {
+        console.error(e);
+        infoEl.textContent = "Błąd połączenia z serwerem.";
+      }
+    }
+
+    fetchBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      fetchByNip();
+    });
+
+    // Enter w polu NIP też pobiera
+    nipEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        fetchByNip();
+      }
+    });
+  });
+</script>
+</body>
+</html>

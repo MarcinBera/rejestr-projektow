@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Kalkulacja <%= row.id %></title>
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <strong>Kalkulacja #<%= row.id %></strong>
+      <span class="muted">| NIP: <%= row.nip %> | <%= row.company_name || '' %></span>
+    </div>
+    <div class="topbar-right">
+      <a class="linkbtn" href="/calculations">Powrót</a>
+      <form method="POST" action="/logout" style="display:inline;">
+        <button class="linkbtn" type="submit">Wyloguj</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+    <% if (err) { %><div class="alert alert-err"><%= err %></div><% } %>
+    <% if (msg) { %><div class="alert alert-ok"><%= msg %></div><% } %>
+
+    <div class="card">
+      <h2>Dane</h2>
+      <p><b>Data:</b> <%= row.calculation_date %></p>
+      <p><b>Wykonawca:</b> <%= row.perf_first %> <%= row.perf_last %></p>
+      <p><b>Adres:</b> <%= row.company_address || '' %></p>
+
+      <hr/>
+
+      <p><b>Osoba kontaktowa:</b> <%= row.contact_person %></p>
+      <p><b>Email:</b> <%= row.contact_email %></p>
+      <p><b>Oddział/miasto:</b> <%= row.branch_city %></p>
+      <p><b>Województwo:</b> <%= row.voivodeship %></p>
+      <p><b>Klient docelowy:</b> <%= row.end_customer %></p>
+      <p><b>Nowy klient:</b> <%= row.is_new_customer ? 'TAK' : 'NIE' %></p>
+      <p><b>Rodzaj produktu:</b> <%= row.product_type %></p>
+      <p><b>Szczegóły produktu:</b><br/><%= row.product_details %></p>
+    </div>
+
+    <div class="card">
+      <h2>Pola do uzupełnienia / aktualizacji</h2>
+
+      <% if (user.role !== 'sales') { %>
+        <p class="muted">Na tym etapie edycję ma tylko handlowiec.</p>
+      <% } else { %>
+        <form method="POST" action="/calculations/<%= row.id %>/update">
+          <label>Status</label>
+          <select name="status" required>
+            <% STATUS.forEach(s => { %>
+              <option value="<%= s.id %>" <%= (s.id === row.status ? 'selected' : '') %>><%= s.id %>. <%= s.name %></option>
+            <% }) %>
+          </select>
+
+          <label>Obrót</label>
+          <input name="turnover" value="<%= row.turnover ?? '' %>" placeholder="może być puste" />
+
+          <label>Rodzaj oferty</label>
+          <select name="offerType">
+            <option value="" <%= (!row.offer_type ? 'selected' : '') %>>(puste)</option>
+            <option value="Podstawowa" <%= (row.offer_type === 'Podstawowa' ? 'selected' : '') %>>Podstawowa</option>
+            <option value="Uproszczona" <%= (row.offer_type === 'Uproszczona' ? 'selected' : '') %>>Uproszczona</option>
+          </select>
+
+          <button class="btn" type="submit">Zapisz zmiany</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

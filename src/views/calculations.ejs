@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Rejestr kalkulacji</title>
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <strong>Rejestr kalkulacji</strong>
+      <span class="muted">
+        | <%= user.firstName %> <%= user.lastName %> (<%= user.role === 'sales' ? 'Handlowiec' : 'Projektant' %>)
+        <% if (user.role === 'sales') { %> | nr: <%= user.salesNumber %> <% } %>
+      </span>
+    </div>
+    <div class="topbar-right">
+      <% if (user.role === 'sales') { %>
+        <a class="linkbtn" href="/assignments">Projektanci</a>
+      <% } %>
+      <form method="POST" action="/logout" style="display:inline;">
+        <button class="linkbtn" type="submit">Wyloguj</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+    <% if (err) { %><div class="alert alert-err"><%= err %></div><% } %>
+    <% if (msg) { %><div class="alert alert-ok"><%= msg %></div><% } %>
+
+    <% if (!rows.length) { %>
+      <div class="card">
+        <p>Brak kalkulacji.</p>
+        <% if (user.role === 'designer') { %>
+          <p class="muted">Jako projektant zobaczysz kalkulacje handlowców, gdy Cię przypiszą.</p>
+        <% } %>
+      </div>
+    <% } else { %>
+      <div class="card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>NIP</th>
+              <th>Nazwa klienta</th>
+              <th>Os. kontaktowa</th>
+              <th>Email</th>
+              <th>Miasto</th>
+              <th>Woj.</th>
+              <th>Produkt</th>
+              <th>Status</th>
+              <th>Nowy klient</th>
+              <th>Obrót</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rows.forEach(r => { %>
+              <tr class="clickable" onclick="window.location='/calculations/<%= r.id %>'">
+                <td><%= r.calculation_date %></td>
+                <td><%= r.nip %></td>
+                <td><%= r.company_name || '' %></td>
+                <td><%= r.contact_person %></td>
+                <td><%= r.contact_email %></td>
+                <td><%= r.branch_city %></td>
+                <td><%= r.voivodeship %></td>
+                <td><%= r.product_type %></td>
+                <td><%= (STATUS.find(s => s.id === r.status) || {name:'?'}).name %></td>
+                <td><%= r.is_new_customer ? 'TAK' : 'NIE' %></td>
+                <td><%= (r.turnover ?? '') %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <p class="muted" style="margin-top:10px;">Kliknij wiersz, aby wejść w kalkulację.</p>
+      </div>
+    <% } %>
+  </div>
+
+<a class="fab" href="/calculations/new">Nowa kalkulacja</a>
+
+
+  <style>
+    .clickable { cursor: pointer; }
+    .clickable:hover { background: #f9fafb; }
+  </style>
+</body>
+</html>

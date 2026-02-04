@@ -43,10 +43,15 @@ CREATE TABLE IF NOT EXISTS calculations (
   product_type TEXT NOT NULL,              -- lista
   product_details TEXT NOT NULL,           -- z ręki
 
+
   status INTEGER NOT NULL CHECK(status IN (1,2,3,4,5,6,7,8)),
 
   turnover REAL,
   offer_type TEXT CHECK(offer_type IN ('Podstawowa','Uproszczona')),
+
+  pl_items_json TEXT NOT NULL DEFAULT '[]',
+  foreign_items_json TEXT NOT NULL DEFAULT '[]',
+  quick_offer_json TEXT NOT NULL DEFAULT '[]',
 
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
 

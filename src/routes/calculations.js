@@ -249,6 +249,64 @@ router.get("/:id", requireAuth, (req, res) => {
   res.render("calculation", { row, STATUS, PRODUCTS });
 });
 
+router.post("/:id/save", requireAuth, express.json(), (req, res) => {
+  const db = getDb();
+  const user = req.session.user;
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ ok: false, error: "Bad id" });
+
+  // Dostęp: ja lub połączeni (w obie strony)
+  const can = db.prepare(`
+    SELECT c.id
+    FROM calculations c
+    WHERE c.id = ?
+      AND (
+        c.created_by_user_id = ?
+        OR c.created_by_user_id IN (SELECT designer_id FROM salesperson_designers WHERE salesperson_id = ?)
+        OR c.created_by_user_id IN (SELECT salesperson_id FROM salesperson_designers WHERE designer_id = ?)
+      )
+  `).get(id, user.id, user.id, user.id);
+
+  if (!can) return res.status(403).json({ ok: false, error: "Brak dostępu" });
+
+  // --- pola "nagłówka" (te co wcześniej były w "Zapisz zmiany") ---
+  const status = parseInt(req.body.status, 10);
+  const turnover = req.body.turnover === "" || req.body.turnover == null ? null : Number(String(req.body.turnover).replace(",", "."));
+  const offerType = (req.body.offerType || "").trim() || null;
+
+  if (!STATUS.some(s => s.id === status)) {
+    return res.status(400).json({ ok: false, error: "Nieprawidłowy status" });
+  }
+  if (turnover !== null && (!Number.isFinite(turnover) || turnover < 0)) {
+    return res.status(400).json({ ok: false, error: "Nieprawidłowy obrót" });
+  }
+  if (offerType && !["Podstawowa", "Uproszczona"].includes(offerType)) {
+    return res.status(400).json({ ok: false, error: "Nieprawidłowy rodzaj oferty" });
+  }
+
+  // --- tabelki ---
+  const plItems = Array.isArray(req.body.plItems) ? req.body.plItems : [];
+  const foreignItems = Array.isArray(req.body.foreignItems) ? req.body.foreignItems : [];
+  const quickOffer = Array.isArray(req.body.quickOffer) ? req.body.quickOffer : [];
+
+  db.prepare(`
+    UPDATE calculations
+    SET status = ?, turnover = ?, offer_type = ?,
+        pl_items_json = ?, foreign_items_json = ?, quick_offer_json = ?
+    WHERE id = ?
+  `).run(
+    status,
+    turnover,
+    offerType,
+    JSON.stringify(plItems),
+    JSON.stringify(foreignItems),
+    JSON.stringify(quickOffer),
+    id
+  );
+
+  return res.json({ ok: true });
+});
+
 
 // EDYCJA pól “do wypełnienia później” (na razie: obrót + rodzaj oferty + status)
 router.post("/:id/update", requireAuth, (req, res) => {
@@ -320,6 +378,39 @@ router.post("/:id/update", requireAuth, (req, res) => {
 
   req.session.msg = "Zaktualizowano kalkulację.";
   return res.redirect(`/calculations/${id}`);
+});
+
+router.post("/:id/tables", requireAuth, express.json(), (req, res) => {
+  const db = getDb();
+  const user = req.session.user;
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).json({ ok: false, error: "Bad id" });
+
+  // sprawdź dostęp (Ty masz już “połączenia” w obie strony – użyj tej samej logiki co do wglądu)
+  const can = db.prepare(`
+    SELECT 1
+    FROM calculations c
+    WHERE c.id = ?
+      AND (
+        c.created_by_user_id = ?
+        OR c.created_by_user_id IN (SELECT designer_id FROM salesperson_designers WHERE salesperson_id = ?)
+        OR c.created_by_user_id IN (SELECT salesperson_id FROM salesperson_designers WHERE designer_id = ?)
+      )
+  `).get(id, user.id, user.id, user.id);
+
+  if (!can) return res.status(403).json({ ok: false, error: "Brak dostępu" });
+
+  const plItems = Array.isArray(req.body.plItems) ? req.body.plItems : [];
+  const foreignItems = Array.isArray(req.body.foreignItems) ? req.body.foreignItems : [];
+  const quickOffer = Array.isArray(req.body.quickOffer) ? req.body.quickOffer : [];
+
+  db.prepare(`
+    UPDATE calculations
+    SET pl_items_json = ?, foreign_items_json = ?, quick_offer_json = ?
+    WHERE id = ?
+  `).run(JSON.stringify(plItems), JSON.stringify(foreignItems), JSON.stringify(quickOffer), id);
+
+  return res.json({ ok: true });
 });
 
 

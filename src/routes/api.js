@@ -44,4 +44,72 @@ router.get("/mf/nip/:nip", async (req, res) => {
   }
 });
 
+const fs = require("fs");
+const path = require("path");
+
+function parseCsvLine(line) {
+  // proste CSV z cudzysłowami i przecinkami
+  const out = [];
+  let cur = "";
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      inQ = !inQ;
+    } else if (ch === "," && !inQ) {
+      out.push(cur);
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  out.push(cur);
+  return out.map(s => s.trim());
+}
+
+function loadClosedProducts() {
+  const filePath = path.join(__dirname, "..", "data", "closed-products.csv");
+  const raw = fs.readFileSync(filePath, "utf8")
+    .replace(/^\uFEFF/, "") // BOM
+    .split(/\r?\n/)
+    .filter(Boolean);
+
+  // w pliku: nagłówek Imported table, potem linia kolumn, potem dane
+  // szukamy linii która zaczyna się od "Column 1"
+  const headerIdx = raw.findIndex(l => l.startsWith('"Column 1"'));
+  if (headerIdx === -1) return [];
+
+  const headers = parseCsvLine(raw[headerIdx]).map(h => h.replace(/^"|"$/g, ""));
+  const dataLines = raw.slice(headerIdx + 1);
+
+  const rows = [];
+  for (const line of dataLines) {
+    if (!line.startsWith('"')) continue;
+    const vals = parseCsvLine(line).map(v => v.replace(/^"|"$/g, ""));
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = vals[i] ?? "");
+    // mapowanie na sensowne pola
+    rows.push({
+      element: obj["Column 1"] || "",
+      width: obj["Column 2"] || "",
+      length: obj["Column 3"] || "",
+      height: obj["Column 4"] || "",
+      thickness: obj["Column 5"] || ""
+    });
+  }
+
+  // odfiltruj puste wiersze
+  return rows.filter(r => r.element);
+}
+
+router.get("/closed-products", (req, res) => {
+  try {
+    const products = loadClosedProducts();
+    res.json({ ok: true, products });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+
 module.exports = router;

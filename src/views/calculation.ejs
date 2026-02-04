@@ -21,6 +21,12 @@
   </div>
 
   <div class="container">
+    <%
+  const plItems = JSON.parse(row.pl_items_json || "[]");
+  const foreignItems = JSON.parse(row.foreign_items_json || "[]");
+  const quickOffer = JSON.parse(row.quick_offer_json || "[]");
+%>
+
     <% if (err) { %><div class="alert alert-err"><%= err %></div><% } %>
     <% if (msg) { %><div class="alert alert-ok"><%= msg %></div><% } %>
 
@@ -65,11 +71,505 @@
             <option value="Podstawowa" <%= (row.offer_type === 'Podstawowa' ? 'selected' : '') %>>Podstawowa</option>
             <option value="Uproszczona" <%= (row.offer_type === 'Uproszczona' ? 'selected' : '') %>>Uproszczona</option>
           </select>
+<div class="card">
+  <h2>Specyfikacja towaru zakupionego w Polsce</h2>
 
-          <button class="btn" type="submit">Zapisz zmiany</button>
+  <table class="table" id="plTable">
+    <thead>
+      <tr>
+        <th>Ilość</th>
+        <th>Typ produktu</th>
+        <th>Wymiary (mm)</th>
+        <th>Dostawca</th>
+        <th>Cena jedn. PLN</th>
+        <th>Waga jedn. kg</th>
+        <th>Kurs</th>
+        <th>Waga łączna (t)</th>
+        <th>Wartość łączna</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (plItems.length ? plItems : [{qty:1,type:"",dims:"",supplier:"",unitPrice:"",unitWeight:"",rate:"1.00"}]).forEach((it, idx) => { %>
+        <tr>
+          <td><input data-t="pl" data-i="<%= idx %>" data-f="qty" value="<%= it.qty ?? '' %>"></td>
+          <td><input data-t="pl" data-i="<%= idx %>" data-f="type" value="<%= it.type ?? '' %>"></td>
+          <td><input data-t="pl" data-i="<%= idx %>" data-f="dims" value="<%= it.dims ?? '' %>"></td>
+          <td><input data-t="pl" data-i="<%= idx %>" data-f="supplier" value="<%= it.supplier ?? '' %>"></td>
+          <td><input data-t="pl" data-i="<%= idx %>" data-f="unitPrice" value="<%= it.unitPrice ?? '' %>"></td>
+          <td><input data-t="pl" data-i="<%= idx %>" data-f="unitWeight" value="<%= it.unitWeight ?? '' %>"></td>
+          <td><input data-t="pl" data-i="<%= idx %>" data-f="rate" value="<%= it.rate ?? '1.00' %>"></td>
+          <td class="muted" data-out="plWeightT" data-i="<%= idx %>"></td>
+          <td class="muted" data-out="plValue" data-i="<%= idx %>"></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <button class="btn" type="button" onclick="addRow('pl')">Dodaj wiersz</button>
+</div>
+<div class="card">
+  <h2>Specyfikacja towaru zakupionego za granicą</h2>
+
+  <table class="table" id="foreignTable">
+    <thead>
+      <tr>
+        <th>Ilość</th>
+        <th>Typ produktu</th>
+        <th>Wymiary (mm)</th>
+        <th>Dostawca</th>
+        <th>Cena jedn. EUR</th>
+        <th>Waga jedn. kg</th>
+        <th>Rabat %</th>
+        <th>Waga łączna (t)</th>
+        <th>Wartość łączna (EUR)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (foreignItems.length ? foreignItems : [{qty:1,type:"",dims:"",supplier:"",unitPrice:"",unitWeight:"",discount:"0"}]).forEach((it, idx) => { %>
+        <tr>
+          <td><input data-t="foreign" data-i="<%= idx %>" data-f="qty" value="<%= it.qty ?? '' %>"></td>
+          <td><input data-t="foreign" data-i="<%= idx %>" data-f="type" value="<%= it.type ?? '' %>"></td>
+          <td><input data-t="foreign" data-i="<%= idx %>" data-f="dims" value="<%= it.dims ?? '' %>"></td>
+          <td><input data-t="foreign" data-i="<%= idx %>" data-f="supplier" value="<%= it.supplier ?? '' %>"></td>
+          <td><input data-t="foreign" data-i="<%= idx %>" data-f="unitPrice" value="<%= it.unitPrice ?? '' %>"></td>
+          <td><input data-t="foreign" data-i="<%= idx %>" data-f="unitWeight" value="<%= it.unitWeight ?? '' %>"></td>
+          <td><input data-t="foreign" data-i="<%= idx %>" data-f="discount" value="<%= it.discount ?? '0' %>"></td>
+          <td class="muted" data-out="frWeightT" data-i="<%= idx %>"></td>
+          <td class="muted" data-out="frValue" data-i="<%= idx %>"></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <button class="btn" type="button" onclick="addRow('foreign')">Dodaj wiersz</button>
+</div>
+<div class="card">
+  <h2>Szybka oferta</h2>
+
+  <datalist id="closedProductsList"></datalist>
+
+  <table class="table" id="quickTable">
+    <thead>
+      <tr>
+        <th>Producent</th>
+        <th>Element</th>
+        <th>Wymiary (mm)</th>
+        <th>Ilość zapot.</th>
+        <th>Ilość magazyn</th>
+        <th>Cena sprzedaży</th>
+        <th>Koszt transportu</th>
+        <th>Koszt montażu</th>
+        <th>Wartość (auto)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (quickOffer.length ? quickOffer : [{producer:"",element:"",dims:"",qtyNeed:"",qtyStock:"",salePrice:"",transport:"",assembly:""}]).forEach((it, idx) => { %>
+        <tr>
+          <td><input data-t="quick" data-i="<%= idx %>" data-f="producer" value="<%= it.producer ?? '' %>"></td>
+
+          <td>
+<input list="closedProductsList"
+       data-t="quick" data-i="<%= idx %>" data-f="element"
+       value="<%= it.element ?? '' %>">
+
+          </td>
+
+          <td><input data-t="quick" data-i="<%= idx %>" data-f="dims" value="<%= it.dims ?? '' %>" readonly></td>
+
+          <td><input data-t="quick" data-i="<%= idx %>" data-f="qtyNeed" value="<%= it.qtyNeed ?? '' %>"></td>
+          <td><input data-t="quick" data-i="<%= idx %>" data-f="qtyStock" value="<%= it.qtyStock ?? '' %>"></td>
+
+          <td><input data-t="quick" data-i="<%= idx %>" data-f="salePrice" value="<%= it.salePrice ?? '' %>"></td>
+          <td><input data-t="quick" data-i="<%= idx %>" data-f="transport" value="<%= it.transport ?? '' %>"></td>
+          <td><input data-t="quick" data-i="<%= idx %>" data-f="assembly" value="<%= it.assembly ?? '' %>"></td>
+
+          <td class="muted" data-out="qValue" data-i="<%= idx %>"></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+        <button class="btn" type="button" onclick="addRow('quick')">Dodaj wiersz</button>
+      </div>
+      <!-- <div class="card">
+        <button class="btn" type="button" onclick="saveTables()">Zapisz tabelki</button>
+        <span id="saveInfo" class="muted" style="margin-left:10px;"></span>
+      </div> -->
+
+          <!-- <button class="btn" type="submit">Zapisz zmiany</button> -->
+           <div class="card">
+  <h2>Aktualizacja</h2>
+
+  <label>Status</label>
+  <select id="hdrStatus" required>
+    <% STATUS.forEach(s => { %>
+      <option value="<%= s.id %>" <%= (s.id === row.status ? 'selected' : '') %>><%= s.id %>. <%= s.name %></option>
+    <% }) %>
+  </select>
+
+  <label>Obrót</label>
+  <input id="hdrTurnover" value="<%= row.turnover ?? '' %>" placeholder="może być puste" />
+
+  <label>Rodzaj oferty</label>
+  <select id="hdrOfferType">
+    <option value="" <%= (!row.offer_type ? 'selected' : '') %>>(puste)</option>
+    <option value="Podstawowa" <%= (row.offer_type === 'Podstawowa' ? 'selected' : '') %>>Podstawowa</option>
+    <option value="Uproszczona" <%= (row.offer_type === 'Uproszczona' ? 'selected' : '') %>>Uproszczona</option>
+  </select>
+
+<button class="btn" type="button" id="saveAllBtn">Zapisz wszystko</button>
+<span id="saveInfo" class="muted" style="margin-left:10px;"></span>
+</div>
+
         </form>
       <% } %>
     </div>
   </div>
+  <script type="application/json" id="calcIdJson"><%- JSON.stringify(row.id) %></script>
+<script type="application/json" id="plItemsJson"><%- JSON.stringify(plItems) %></script>
+<script type="application/json" id="foreignItemsJson"><%- JSON.stringify(foreignItems) %></script>
+<script type="application/json" id="quickOfferJson"><%- JSON.stringify(quickOffer) %></script>
+
+  <script>
+  function readJson(id) {
+    const el = document.getElementById(id);
+    return el ? JSON.parse(el.textContent) : null;
+  }
+
+  const calcId = readJson("calcIdJson");
+  let state = {
+    pl: readJson("plItemsJson") || [],
+    foreign: readJson("foreignItemsJson") || [],
+    quick: readJson("quickOfferJson") || [],
+    closedProducts: []
+  };    
+  // const calcId = <%= row.id %>;
+
+  // // stan w JS
+  // let state = {
+  //   pl: <%- JSON.stringify(plItems) %>,
+  //   foreign: <%- JSON.stringify(foreignItems) %>,
+  //   quick: <%- JSON.stringify(quickOffer) %>,
+  //   closedProducts: []
+  // };
+
+  function num(x) {
+    if (x === null || x === undefined) return 0;
+    const s = String(x).replace(/\s/g, "").replace(",", ".").replace("zł","").replace("PLN","").replace("€","").trim();
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function renderComputed() {
+    // PL: waga t = qty*unitWeight/1000; wartość = qty*unitPrice
+    document.querySelectorAll('[data-out="plWeightT"]').forEach(td => {
+      const i = parseInt(td.dataset.i, 10);
+      const it = state.pl[i] || {};
+      const w = (num(it.qty) * num(it.unitWeight)) / 1000;
+      td.textContent = w ? w.toFixed(3) : "";
+    });
+    document.querySelectorAll('[data-out="plValue"]').forEach(td => {
+      const i = parseInt(td.dataset.i, 10);
+      const it = state.pl[i] || {};
+      const v = (num(it.qty) * num(it.unitPrice));
+      td.textContent = v ? v.toFixed(2) : "";
+    });
+
+    // Foreign: rabat % => value = qty*unitPrice*(1-discount/100)
+    document.querySelectorAll('[data-out="frWeightT"]').forEach(td => {
+      const i = parseInt(td.dataset.i, 10);
+      const it = state.foreign[i] || {};
+      const w = (num(it.qty) * num(it.unitWeight)) / 1000;
+      td.textContent = w ? w.toFixed(3) : "";
+    });
+    document.querySelectorAll('[data-out="frValue"]').forEach(td => {
+      const i = parseInt(td.dataset.i, 10);
+      const it = state.foreign[i] || {};
+      const disc = num(it.discount) / 100;
+      const v = num(it.qty) * num(it.unitPrice) * (1 - disc);
+      td.textContent = v ? v.toFixed(2) : "";
+    });
+
+    // Quick: value = qtyNeed*salePrice + transport + assembly
+    document.querySelectorAll('[data-out="qValue"]').forEach(td => {
+      const i = parseInt(td.dataset.i, 10);
+      const it = state.quick[i] || {};
+      const v = (num(it.qtyNeed) * num(it.salePrice)) + num(it.transport) + num(it.assembly);
+      td.textContent = v ? v.toFixed(2) : "";
+    });
+  }
+
+  // zbieranie inputów do state
+function bindInputs() {
+  attachInputListeners(document);
+}
+
+
+  // function bindInputs() {
+  //   document.querySelectorAll("input[data-t]").forEach(inp => {
+  //     inp.addEventListener("input", () => {
+  //       const t = inp.dataset.t;
+  //       const i = parseInt(inp.dataset.i, 10);
+  //       const f = inp.dataset.f;
+  //       if (!state[t][i]) state[t][i] = {};
+  //       state[t][i][f] = inp.value;
+  //       renderComputed();
+  //     });
+  //   });
+  // }
+
+  function attachInputListeners(rootEl) {
+  rootEl.querySelectorAll("input[data-t]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const t = inp.dataset.t;
+      const i = parseInt(inp.dataset.i, 10);
+      const f = inp.dataset.f;
+
+      if (!state[t][i]) state[t][i] = {};
+      state[t][i][f] = inp.value;
+
+      // auto-dims dla szybkiej oferty
+      if (t === "quick" && f === "element") {
+        const chosen = (inp.value || "").trim();
+        const p = state.closedProducts.find(x => x.element === chosen);
+        const dimsInput = document.querySelector(`input[data-t="quick"][data-i="${i}"][data-f="dims"]`);
+
+        if (p && dimsInput) {
+          const parts = [];
+          if (p.width) parts.push(`S:${p.width}`);
+          if (p.length) parts.push(`L:${p.length}`);
+          if (p.height) parts.push(`W:${p.height}`);
+          if (p.thickness) parts.push(`G:${p.thickness}`);
+          const dims = parts.join(" ");
+          dimsInput.value = dims;
+          state.quick[i].dims = dims;
+        } else if (dimsInput) {
+          dimsInput.value = "";
+          state.quick[i].dims = "";
+        }
+      }
+
+      renderComputed();
+    });
+  });
+}
+
+function addRowDom(type) {
+  let tbody, rowIndex, tr;
+
+  if (type === "pl") {
+    rowIndex = state.pl.length;
+    state.pl.push({qty:1,type:"",dims:"",supplier:"",unitPrice:"",unitWeight:"",rate:"1.00"});
+    tbody = document.querySelector("#plTable tbody");
+
+    tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input data-t="pl" data-i="${rowIndex}" data-f="qty" value="1"></td>
+      <td><input data-t="pl" data-i="${rowIndex}" data-f="type" value=""></td>
+      <td><input data-t="pl" data-i="${rowIndex}" data-f="dims" value=""></td>
+      <td><input data-t="pl" data-i="${rowIndex}" data-f="supplier" value=""></td>
+      <td><input data-t="pl" data-i="${rowIndex}" data-f="unitPrice" value=""></td>
+      <td><input data-t="pl" data-i="${rowIndex}" data-f="unitWeight" value=""></td>
+      <td><input data-t="pl" data-i="${rowIndex}" data-f="rate" value="1.00"></td>
+      <td class="muted" data-out="plWeightT" data-i="${rowIndex}"></td>
+      <td class="muted" data-out="plValue" data-i="${rowIndex}"></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  if (type === "foreign") {
+    rowIndex = state.foreign.length;
+    state.foreign.push({qty:1,type:"",dims:"",supplier:"",unitPrice:"",unitWeight:"",discount:"0"});
+    tbody = document.querySelector("#foreignTable tbody");
+
+    tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input data-t="foreign" data-i="${rowIndex}" data-f="qty" value="1"></td>
+      <td><input data-t="foreign" data-i="${rowIndex}" data-f="type" value=""></td>
+      <td><input data-t="foreign" data-i="${rowIndex}" data-f="dims" value=""></td>
+      <td><input data-t="foreign" data-i="${rowIndex}" data-f="supplier" value=""></td>
+      <td><input data-t="foreign" data-i="${rowIndex}" data-f="unitPrice" value=""></td>
+      <td><input data-t="foreign" data-i="${rowIndex}" data-f="unitWeight" value=""></td>
+      <td><input data-t="foreign" data-i="${rowIndex}" data-f="discount" value="0"></td>
+      <td class="muted" data-out="frWeightT" data-i="${rowIndex}"></td>
+      <td class="muted" data-out="frValue" data-i="${rowIndex}"></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  if (type === "quick") {
+    rowIndex = state.quick.length;
+    state.quick.push({producer:"",element:"",dims:"",qtyNeed:"",qtyStock:"",salePrice:"",transport:"",assembly:""});
+    tbody = document.querySelector("#quickTable tbody");
+
+    tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input data-t="quick" data-i="${rowIndex}" data-f="producer" value=""></td>
+      <td><input list="closedProductsList" data-t="quick" data-i="${rowIndex}" data-f="element" value=""></td>
+      <td><input data-t="quick" data-i="${rowIndex}" data-f="dims" value="" readonly></td>
+      <td><input data-t="quick" data-i="${rowIndex}" data-f="qtyNeed" value=""></td>
+      <td><input data-t="quick" data-i="${rowIndex}" data-f="qtyStock" value=""></td>
+      <td><input data-t="quick" data-i="${rowIndex}" data-f="salePrice" value=""></td>
+      <td><input data-t="quick" data-i="${rowIndex}" data-f="transport" value=""></td>
+      <td><input data-t="quick" data-i="${rowIndex}" data-f="assembly" value=""></td>
+      <td class="muted" data-out="qValue" data-i="${rowIndex}"></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // podepnij eventy tylko do nowego wiersza
+  attachInputListeners(tr);
+  renderComputed();
+}
+
+// globalnie dla onclick=""
+window.addRow = function(type) {
+  addRowDom(type);
+};
+
+window.saveAll = async function() {
+  const info = document.getElementById("saveInfo");
+  info.textContent = "Zapisuję...";
+
+  try {
+    // zsynchronizuj state z inputami
+    document.querySelectorAll("input[data-t]").forEach(inp => {
+      const t = inp.dataset.t;
+      const i = parseInt(inp.dataset.i, 10);
+      const f = inp.dataset.f;
+      if (!state[t][i]) state[t][i] = {};
+      state[t][i][f] = inp.value;
+    });
+
+    const payload = {
+      status: document.getElementById("hdrStatus")?.value,
+      turnover: document.getElementById("hdrTurnover")?.value ?? "",
+      offerType: document.getElementById("hdrOfferType")?.value ?? "",
+      plItems: state.pl,
+      foreignItems: state.foreign,
+      quickOffer: state.quick
+    };
+
+    console.log("SAVE payload:", payload);
+
+    const url = `/calculations/${calcId}/save`;
+    console.log("POST", url);
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    console.log("RESP status:", resp.status);
+
+    const data = await resp.json().catch(() => null);
+    console.log("RESP json:", data);
+
+    if (resp.ok && data && data.ok) {
+      info.textContent = "Zapisano.";
+    } else {
+      info.textContent = "Błąd zapisu.";
+    }
+  } catch (e) {
+    console.error(e);
+    info.textContent = "Błąd JS (sprawdź Console).";
+  }
+};
+
+
+  // function addRow(type) {
+  //   if (type === "pl") state.pl.push({qty:1,type:"",dims:"",supplier:"",unitPrice:"",unitWeight:"",rate:"1.00"});
+  //   if (type === "foreign") state.foreign.push({qty:1,type:"",dims:"",supplier:"",unitPrice:"",unitWeight:"",discount:"0"});
+  //   if (type === "quick") state.quick.push({producer:"",element:"",dims:"",qtyNeed:"",qtyStock:"",salePrice:"",transport:"",assembly:""});
+  //   // najprościej: reload strony po dodaniu (bez SPA rzeźby)
+  //   // zapisujesz aktualnie w DB dopiero po kliknięciu "Zapisz tabelki"
+  //   location.reload();
+  // }
+
+  async function loadClosedProducts() {
+    const r = await fetch("/api/closed-products");
+    const data = await r.json();
+    if (!data.ok) return;
+    state.closedProducts = data.products;
+
+    // wypełnij datalist
+    const dl = document.getElementById("closedProductsList");
+    dl.innerHTML = "";
+    for (const p of state.closedProducts) {
+      const opt = document.createElement("option");
+      opt.value = p.element;
+      dl.appendChild(opt);
+    }
+  }
+
+  // auto-uzupełnienie quick dims po wybraniu elementu
+  window.onQuickElementInput = function(idx) {
+    const elInput = document.querySelector(`input[data-t="quick"][data-i="${idx}"][data-f="element"]`);
+    const dimsInput = document.querySelector(`input[data-t="quick"][data-i="${idx}"][data-f="dims"]`);
+    const chosen = (elInput?.value || "").trim();
+    const p = state.closedProducts.find(x => x.element === chosen);
+    if (p && dimsInput) {
+      // sklej wymiary “jak się da”
+      const parts = [];
+      if (p.width) parts.push(`S:${p.width}`);
+      if (p.length) parts.push(`L:${p.length}`);
+      if (p.height) parts.push(`W:${p.height}`);
+      if (p.thickness) parts.push(`G:${p.thickness}`);
+      const dims = parts.join(" ");
+      dimsInput.value = dims;
+
+      if (!state.quick[idx]) state.quick[idx] = {};
+      state.quick[idx].dims = dims;
+    }
+    renderComputed();
+  };
+
+  // async function saveTables() {
+  //   const info = document.getElementById("saveInfo");
+  //   info.textContent = "Zapisuję...";
+
+  //   // przed zapisem zbierz jeszcze raz wszystko z inputów (na wypadek braku eventu)
+  //   document.querySelectorAll("input[data-t]").forEach(inp => {
+  //     const t = inp.dataset.t;
+  //     const i = parseInt(inp.dataset.i, 10);
+  //     const f = inp.dataset.f;
+  //     if (!state[t][i]) state[t][i] = {};
+  //     state[t][i][f] = inp.value;
+  //   });
+
+  //   const resp = await fetch(`/calculations/${calcId}/tables`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({
+  //       plItems: state.pl,
+  //       foreignItems: state.foreign,
+  //       quickOffer: state.quick
+  //     })
+  //   });
+
+  //   const data = await resp.json();
+  //   info.textContent = data.ok ? "Zapisano." : ("Błąd: " + (data.error || "??"));
+  // }
+
+(async function init() {
+  await loadClosedProducts();
+  bindInputs();
+  renderComputed();
+
+  const btn = document.getElementById("saveAllBtn");
+  if (!btn) {
+    console.error("Brak przycisku #saveAllBtn");
+    return;
+  }
+
+  btn.addEventListener("click", () => {
+    console.log("Klik: Zapisz wszystko");
+    window.saveAll(); // wywołujemy globalną funkcję
+  });
+})();
+
+</script>
+
 </body>
 </html>

@@ -285,15 +285,18 @@ router.post("/:id/save", requireAuth, express.json(), (req, res) => {
   }
 
   // --- tabelki ---
+  const summary = (req.body.summary && typeof req.body.summary === "object") ? req.body.summary : {};
+
   const plItems = Array.isArray(req.body.plItems) ? req.body.plItems : [];
   const foreignItems = Array.isArray(req.body.foreignItems) ? req.body.foreignItems : [];
   const quickOffer = Array.isArray(req.body.quickOffer) ? req.body.quickOffer : [];
 
   db.prepare(`
-    UPDATE calculations
-    SET status = ?, turnover = ?, offer_type = ?,
-        pl_items_json = ?, foreign_items_json = ?, quick_offer_json = ?
-    WHERE id = ?
+UPDATE calculations
+SET status = ?, turnover = ?, offer_type = ?,
+    pl_items_json = ?, foreign_items_json = ?, quick_offer_json = ?,
+    summary_json = ?
+WHERE id = ?
   `).run(
     status,
     turnover,
@@ -301,11 +304,110 @@ router.post("/:id/save", requireAuth, express.json(), (req, res) => {
     JSON.stringify(plItems),
     JSON.stringify(foreignItems),
     JSON.stringify(quickOffer),
+    JSON.stringify(summary),
     id
   );
 
   return res.json({ ok: true });
 });
+
+const PDFDocument = require("pdfkit");
+
+router.get("/:id/pdf", requireAuth, (req, res) => {
+  const db = getDb();
+  const user = req.session.user;
+  const id = parseInt(req.params.id, 10);
+  if (!id) return res.status(400).send("Bad id");
+
+  // dostęp: taki sam jak podgląd
+  const row = db.prepare(`
+    SELECT c.*, u.first_name AS creator_first, u.last_name AS creator_last
+    FROM calculations c
+    JOIN users u ON u.id = c.created_by_user_id
+    WHERE c.id = ?
+      AND (
+        c.created_by_user_id = ?
+        OR c.created_by_user_id IN (SELECT designer_id FROM salesperson_designers WHERE salesperson_id = ?)
+        OR c.created_by_user_id IN (SELECT salesperson_id FROM salesperson_designers WHERE designer_id = ?)
+      )
+  `).get(id, user.id, user.id, user.id);
+
+  if (!row) return res.status(403).send("Brak dostępu");
+
+  const plItems = JSON.parse(row.pl_items_json || "[]");
+  const foreignItems = JSON.parse(row.foreign_items_json || "[]");
+  const quickOffer = JSON.parse(row.quick_offer_json || "[]");
+  const summary = JSON.parse(row.summary_json || "{}");
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename="kalkulacja-${row.id}.pdf"`);
+
+  const doc = new PDFDocument({ margin: 30 });
+  doc.pipe(res);
+
+  doc.fontSize(16).text(`Kalkulacja #${row.id}`, { align: "left" });
+  doc.moveDown(0.5);
+
+  doc.fontSize(10).text(`Data: ${row.calculation_date || ""}`);
+  doc.text(`NIP: ${row.nip || ""}`);
+  doc.text(`Klient: ${row.company_name || ""}`);
+  doc.text(`Adres: ${row.company_address || ""}`);
+  doc.text(`Kontakt: ${row.contact_person || ""} / ${row.contact_email || ""}`);
+  doc.text(`Miasto: ${row.branch_city || ""} | Woj.: ${row.voivodeship || ""}`);
+  doc.text(`Produkt: ${row.product_type || ""}`);
+  doc.text(`Status: ${row.status || ""}`);
+  doc.moveDown(1);
+
+  function table(title, headers, rows) {
+    doc.fontSize(12).text(title);
+    doc.moveDown(0.3);
+    doc.fontSize(8);
+
+    // nagłówek
+    doc.text(headers.join(" | "));
+    doc.moveDown(0.2);
+    doc.text("-".repeat(120));
+    doc.moveDown(0.2);
+
+    for (const r of rows) {
+      doc.text(r.map(x => (x ?? "")).join(" | "));
+    }
+    doc.moveDown(0.8);
+  }
+
+  table(
+    "Specyfikacja PL",
+    ["qty","typ","wymiary","dostawca","cena","waga","kurs"],
+    plItems.map(it => [it.qty, it.type, it.dims, it.supplier, it.unitPrice, it.unitWeight, it.rate])
+  );
+
+  table(
+    "Specyfikacja Zagranica",
+    ["qty","typ","wymiary","dostawca","cena","waga","rabat"],
+    foreignItems.map(it => [it.qty, it.type, it.dims, it.supplier, it.unitPrice, it.unitWeight, it.discount])
+  );
+
+  table(
+    "Szybka oferta",
+    ["producent","element","wymiary","qtyNeed","qtyStock","sprzedaż","transport","montaż"],
+    quickOffer.map(it => [it.producer, it.element, it.dims, it.qtyNeed, it.qtyStock, it.salePrice, it.transport, it.assembly])
+  );
+
+  doc.fontSize(12).text("Podsumowanie");
+  doc.moveDown(0.3);
+  doc.fontSize(9);
+  doc.text(`Towar zagranica (EUR): wartość=${summary.valEur ?? ""} kurs=${summary.fxEur ?? ""} sprzedaż=${summary.saleEur ?? ""} marża%=${summary.marginEur ?? ""}`);
+  doc.text(`Towar PL (PLN): wartość=${summary.valPln ?? ""} kurs=${summary.fxPln ?? ""} sprzedaż=${summary.salePln ?? ""} marża%=${summary.marginPln ?? ""}`);
+  doc.text(`Serwis: wartość=${summary.valSrv ?? ""} sprzedaż=${summary.saleSrv ?? ""} marża%=${summary.marginSrv ?? ""}`);
+  doc.text(`Montaż: wartość=${summary.valMnt ?? ""} sprzedaż=${summary.saleMnt ?? ""} marża%=${summary.marginMnt ?? ""}`);
+  doc.text(`Transport: wartość=${summary.valTrn ?? ""} sprzedaż=${summary.saleTrn ?? ""} marża%=${summary.marginTrn ?? ""}`);
+  doc.moveDown(0.5);
+  doc.text(`SUMA sprzedaży: ${summary.saleTotal ?? ""}`);
+  doc.text(`Marża końcowa projektu: ${summary.marginTotal ?? ""}%`);
+
+  doc.end();
+});
+
 
 
 // EDYCJA pól “do wypełnienia później” (na razie: obrót + rodzaj oferty + status)

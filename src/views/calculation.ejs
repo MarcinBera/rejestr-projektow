@@ -25,6 +25,8 @@
   const plItems = JSON.parse(row.pl_items_json || "[]");
   const foreignItems = JSON.parse(row.foreign_items_json || "[]");
   const quickOffer = JSON.parse(row.quick_offer_json || "[]");
+  const summary = JSON.parse(row.summary_json || "{}");
+
 %>
 
     <% if (err) { %><div class="alert alert-err"><%= err %></div><% } %>
@@ -98,11 +100,28 @@
           <td><input data-t="pl" data-i="<%= idx %>" data-f="unitPrice" value="<%= it.unitPrice ?? '' %>"></td>
           <td><input data-t="pl" data-i="<%= idx %>" data-f="unitWeight" value="<%= it.unitWeight ?? '' %>"></td>
           <td><input data-t="pl" data-i="<%= idx %>" data-f="rate" value="<%= it.rate ?? '1.00' %>"></td>
-          <td class="muted" data-out="plWeightT" data-i="<%= idx %>"></td>
-          <td class="muted" data-out="plValue" data-i="<%= idx %>"></td>
+          <!-- <td class="muted" data-out="plWeightT" data-i="<%= idx %>"></td>
+          <td class="muted" data-out="plValue" data-i="<%= idx %>"></td> -->
+<td><input class="out" readonly data-out="plWeightT" value=""></td>
+<td><input class="out" readonly data-out="plValue" value=""></td>
+
+
+
         </tr>
+        
       <% }) %>
     </tbody>
+       <tfoot>
+    <tr>
+      <td colspan="7" style="text-align:right;"><b>SUMA:</b></td>
+
+      <td><input class="out" readonly id="plTotalWeightT" value=""></td>
+<td><input class="out" readonly id="plTotalValue" value=""></td>
+<!-- 
+      <td class="muted" id="plTotalWeightT"></td>
+      <td class="muted" id="plTotalValue"></td> -->
+    </tr>
+  </tfoot>    
   </table>
 
   <button class="btn" type="button" onclick="addRow('pl')">Dodaj wiersz</button>
@@ -110,36 +129,56 @@
 <div class="card">
   <h2>Specyfikacja towaru zakupionego za granicą</h2>
 
-  <table class="table" id="foreignTable">
-    <thead>
+<table class="table" id="foreignTable">
+  <thead>
+    <tr>
+      <th>Ilość</th>
+      <th>Typ produktu</th>
+      <th>Wymiary (mm)</th>
+      <th>Dostawca</th>
+      <th>Cena jedn. EUR</th>
+      <th>Waga jedn. kg</th>
+      <th>Rabat %</th>
+      <th>Waga łączna (t)</th>
+      <th>Wartość łączna (EUR)</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% (foreignItems.length ? foreignItems : [{qty:1,type:"",dims:"",supplier:"",unitPrice:"",unitWeight:"",discount:"0"}]).forEach((it, idx) => { %>
       <tr>
-        <th>Ilość</th>
-        <th>Typ produktu</th>
-        <th>Wymiary (mm)</th>
-        <th>Dostawca</th>
-        <th>Cena jedn. EUR</th>
-        <th>Waga jedn. kg</th>
-        <th>Rabat %</th>
-        <th>Waga łączna (t)</th>
-        <th>Wartość łączna (EUR)</th>
+        <td><input data-t="foreign" data-i="<%= idx %>" data-f="qty" value="<%= it.qty ?? '' %>"></td>
+        <td><input data-t="foreign" data-i="<%= idx %>" data-f="type" value="<%= it.type ?? '' %>"></td>
+        <td><input data-t="foreign" data-i="<%= idx %>" data-f="dims" value="<%= it.dims ?? '' %>"></td>
+        <td><input data-t="foreign" data-i="<%= idx %>" data-f="supplier" value="<%= it.supplier ?? '' %>"></td>
+        <td><input data-t="foreign" data-i="<%= idx %>" data-f="unitPrice" value="<%= it.unitPrice ?? '' %>"></td>
+        <td><input data-t="foreign" data-i="<%= idx %>" data-f="unitWeight" value="<%= it.unitWeight ?? '' %>"></td>
+        <td><input data-t="foreign" data-i="<%= idx %>" data-f="discount" value="<%= it.discount ?? '0' %>"></td>
+
+        <!-- TE DWIE KOMÓRKI MUSZĄ ISTNIEĆ -->
+        <!-- <td class="muted" data-out="frWeightT" data-i="<%= idx %>"></td>
+        <td class="muted" data-out="frValue" data-i="<%= idx %>"></td> -->
+        <td><input class="out" readonly data-out="frWeightT" value=""></td>
+<td><input class="out" readonly data-out="frValue" value=""></td>
+
+
       </tr>
-    </thead>
-    <tbody>
-      <% (foreignItems.length ? foreignItems : [{qty:1,type:"",dims:"",supplier:"",unitPrice:"",unitWeight:"",discount:"0"}]).forEach((it, idx) => { %>
-        <tr>
-          <td><input data-t="foreign" data-i="<%= idx %>" data-f="qty" value="<%= it.qty ?? '' %>"></td>
-          <td><input data-t="foreign" data-i="<%= idx %>" data-f="type" value="<%= it.type ?? '' %>"></td>
-          <td><input data-t="foreign" data-i="<%= idx %>" data-f="dims" value="<%= it.dims ?? '' %>"></td>
-          <td><input data-t="foreign" data-i="<%= idx %>" data-f="supplier" value="<%= it.supplier ?? '' %>"></td>
-          <td><input data-t="foreign" data-i="<%= idx %>" data-f="unitPrice" value="<%= it.unitPrice ?? '' %>"></td>
-          <td><input data-t="foreign" data-i="<%= idx %>" data-f="unitWeight" value="<%= it.unitWeight ?? '' %>"></td>
-          <td><input data-t="foreign" data-i="<%= idx %>" data-f="discount" value="<%= it.discount ?? '0' %>"></td>
-          <td class="muted" data-out="frWeightT" data-i="<%= idx %>"></td>
-          <td class="muted" data-out="frValue" data-i="<%= idx %>"></td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
+    <% }) %>
+  </tbody>
+
+  <!-- TFOOT MUSI BYĆ POZA TBODY -->
+  <tfoot>
+    <tr>
+      <td colspan="7" style="text-align:right;"><b>SUMA:</b></td>
+      <!-- <td class="muted" id="frTotalWeightT"></td>
+      <td class="muted" id="frTotalValue"></td>
+       -->
+      <td><input class="out" readonly id="frTotalWeightT" value=""></td>
+<td><input class="out" readonly id="frTotalValue" value=""></td>
+
+    </tr>
+  </tfoot>
+</table>
 
   <button class="btn" type="button" onclick="addRow('foreign')">Dodaj wiersz</button>
 </div>
@@ -183,10 +222,22 @@
           <td><input data-t="quick" data-i="<%= idx %>" data-f="transport" value="<%= it.transport ?? '' %>"></td>
           <td><input data-t="quick" data-i="<%= idx %>" data-f="assembly" value="<%= it.assembly ?? '' %>"></td>
 
-          <td class="muted" data-out="qValue" data-i="<%= idx %>"></td>
+          <!-- <td class="muted" data-out="qValue" data-i="<%= idx %>"></td> -->
+          <td><input class="out" readonly data-out="qValue" value=""></td>
+
+
         </tr>
       <% }) %>
+
     </tbody>
+      <tfoot>
+  <tr>
+    <td colspan="8" style="text-align:right;"><b>SUMA:</b></td>
+    <!-- <td class="muted" id="qTotalValue"></td> -->
+     <td><input class="out" readonly id="qTotalValue" value=""></td>
+
+  </tr>
+</tfoot>    
   </table>
 
         <button class="btn" type="button" onclick="addRow('quick')">Dodaj wiersz</button>
@@ -225,12 +276,117 @@
       <% } %>
     </div>
   </div>
+
+<div class="card" id="offerSummary">
+  <h2>Podsumowanie</h2>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Kurs</th>
+        <th>Wartość wg waluty sprzedaży</th>
+        <th>Marża %</th>
+        <th>Cena sprzedaży</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>Towar zakupiony za granicą</b> (EUR)</td>
+        <td><input id="sum_fx_eur" value="<%= summary.fxEur ?? '' %>"></td>
+        <td><input id="sum_val_eur" readonly value=""></td>
+        <td><input id="sum_margin_eur" value="<%= summary.marginEur ?? '' %>"></td>
+        <td><input id="sum_sale_eur" value="<%= summary.saleEur ?? '' %>"></td>
+      </tr>
+
+      <tr>
+        <td><b>Towar zakupiony w Polsce</b> (PLN)</td>
+        <td><input id="sum_fx_pln" value="<%= summary.fxPln ?? '' %>"></td>
+        <td><input id="sum_val_pln" readonly value=""></td>
+        <td><input id="sum_margin_pln" value="<%= summary.marginPln ?? '' %>"></td>
+        <td><input id="sum_sale_pln" value="<%= summary.salePln ?? '' %>"></td>
+      </tr>
+
+      <tr>
+        <td><b>Serwis</b></td>
+        <td><input id="sum_fx_srv" value="<%= summary.fxSrv ?? '' %>"></td>
+        <td><input id="sum_val_srv" value="<%= summary.valSrv ?? '' %>"></td>
+        <td><input id="sum_margin_srv" value="<%= summary.marginSrv ?? '' %>"></td>
+        <td><input id="sum_sale_srv" value="<%= summary.saleSrv ?? '' %>"></td>
+      </tr>
+
+      <tr>
+        <td><b>Montaż</b></td>
+        <td><input id="sum_fx_mnt" value="<%= summary.fxMnt ?? '' %>"></td>
+        <td><input id="sum_val_mnt" value="<%= summary.valMnt ?? '' %>"></td>
+        <td><input id="sum_margin_mnt" value="<%= summary.marginMnt ?? '' %>"></td>
+        <td><input id="sum_sale_mnt" value="<%= summary.saleMnt ?? '' %>"></td>
+      </tr>
+
+      <tr>
+        <td><b>Transport</b></td>
+        <td><input id="sum_fx_trn" value="<%= summary.fxTrn ?? '' %>"></td>
+        <td><input id="sum_val_trn" value="<%= summary.valTrn ?? '' %>"></td>
+        <td><input id="sum_margin_trn" value="<%= summary.marginTrn ?? '' %>"></td>
+        <td><input id="sum_sale_trn" value="<%= summary.saleTrn ?? '' %>"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="display:flex; justify-content:flex-end; gap:16px; align-items:center; margin-top:10px;">
+    <div><b>SUMA</b></div>
+    <input id="sum_sale_total" readonly style="width:220px;" value="">
+  </div>
+
+  <div style="display:flex; justify-content:flex-end; gap:16px; align-items:center; margin-top:10px;">
+    <div><b>MARŻA KOŃCOWA PROJEKTU</b></div>
+    <input id="sum_margin_total" readonly style="width:220px;" value="">
+  </div>
+
+  <div style="display:flex; justify-content:center; gap:20px; margin-top:18px;">
+    <button class="btn" type="button" id="saveAllBtn">Zapisz kalkulację</button>
+    <button class="btn" type="button" id="printPdfBtn">DRUKUJ KALKULACJĘ</button>
+    <span id="saveInfo" class="muted"></span>
+  </div>
+</div>
+
   <script type="application/json" id="calcIdJson"><%- JSON.stringify(row.id) %></script>
 <script type="application/json" id="plItemsJson"><%- JSON.stringify(plItems) %></script>
 <script type="application/json" id="foreignItemsJson"><%- JSON.stringify(foreignItems) %></script>
 <script type="application/json" id="quickOfferJson"><%- JSON.stringify(quickOffer) %></script>
 
   <script>
+function renderOfferSummary() {
+  const frVal = num(document.getElementById("frTotalValue")?.value); // EUR (z tabeli zagranica)
+  const plVal = num(document.getElementById("plTotalValue")?.value); // PLN (z tabeli PL)
+
+  const valEur = document.getElementById("sum_val_eur");
+  const valPln = document.getElementById("sum_val_pln");
+  if (valEur) valEur.value = frVal.toFixed(2);
+  if (valPln) valPln.value = plVal.toFixed(2);
+
+  const saleIds = ["sum_sale_eur","sum_sale_pln","sum_sale_srv","sum_sale_mnt","sum_sale_trn"];
+  const totalSale = saleIds.map(id => num(document.getElementById(id)?.value)).reduce((a,b)=>a+b,0);
+
+  const totalSaleEl = document.getElementById("sum_sale_total");
+  if (totalSaleEl) totalSaleEl.value = totalSale.toFixed(2);
+
+  const fxEur = num(document.getElementById("sum_fx_eur")?.value);
+
+  const cost =
+    (frVal * fxEur) +
+    plVal +
+    num(document.getElementById("sum_val_srv")?.value) +
+    num(document.getElementById("sum_val_mnt")?.value) +
+    num(document.getElementById("sum_val_trn")?.value);
+
+  const marginTotalEl = document.getElementById("sum_margin_total");
+  if (marginTotalEl) {
+    const m = totalSale > 0 ? ((totalSale - cost) / totalSale) * 100 : 0;
+    marginTotalEl.value = m.toFixed(2);
+  }
+}
+    
   function readJson(id) {
     const el = document.getElementById(id);
     return el ? JSON.parse(el.textContent) : null;
@@ -260,44 +416,80 @@
     return Number.isFinite(n) ? n : 0;
   }
 
-  function renderComputed() {
-    // PL: waga t = qty*unitWeight/1000; wartość = qty*unitPrice
-    document.querySelectorAll('[data-out="plWeightT"]').forEach(td => {
-      const i = parseInt(td.dataset.i, 10);
-      const it = state.pl[i] || {};
-      const w = (num(it.qty) * num(it.unitWeight)) / 1000;
-      td.textContent = w ? w.toFixed(3) : "";
-    });
-    document.querySelectorAll('[data-out="plValue"]').forEach(td => {
-      const i = parseInt(td.dataset.i, 10);
-      const it = state.pl[i] || {};
-      const v = (num(it.qty) * num(it.unitPrice));
-      td.textContent = v ? v.toFixed(2) : "";
-    });
+function renderComputed() {
+  // PL
+  let plTotalW = 0, plTotalV = 0;
+  document.querySelectorAll("#plTable tbody tr").forEach(tr => {
+    const qty   = num(tr.querySelector('input[data-t="pl"][data-f="qty"]')?.value);
+    const unitW = num(tr.querySelector('input[data-t="pl"][data-f="unitWeight"]')?.value);
+    const unitP = num(tr.querySelector('input[data-t="pl"][data-f="unitPrice"]')?.value);
 
-    // Foreign: rabat % => value = qty*unitPrice*(1-discount/100)
-    document.querySelectorAll('[data-out="frWeightT"]').forEach(td => {
-      const i = parseInt(td.dataset.i, 10);
-      const it = state.foreign[i] || {};
-      const w = (num(it.qty) * num(it.unitWeight)) / 1000;
-      td.textContent = w ? w.toFixed(3) : "";
-    });
-    document.querySelectorAll('[data-out="frValue"]').forEach(td => {
-      const i = parseInt(td.dataset.i, 10);
-      const it = state.foreign[i] || {};
-      const disc = num(it.discount) / 100;
-      const v = num(it.qty) * num(it.unitPrice) * (1 - disc);
-      td.textContent = v ? v.toFixed(2) : "";
-    });
+    const wT = (qty * unitW) / 1000;
+    const v  = qty * unitP;
 
-    // Quick: value = qtyNeed*salePrice + transport + assembly
-    document.querySelectorAll('[data-out="qValue"]').forEach(td => {
-      const i = parseInt(td.dataset.i, 10);
-      const it = state.quick[i] || {};
-      const v = (num(it.qtyNeed) * num(it.salePrice)) + num(it.transport) + num(it.assembly);
-      td.textContent = v ? v.toFixed(2) : "";
-    });
-  }
+    const outW = tr.querySelector('input[data-out="plWeightT"]');
+    const outV = tr.querySelector('input[data-out="plValue"]');
+
+    if (outW) outW.value = wT.toFixed(3);
+    if (outV) outV.value = v.toFixed(2);
+
+    plTotalW += wT; plTotalV += v;
+  });
+
+  const plTW = document.getElementById("plTotalWeightT");
+  const plTV = document.getElementById("plTotalValue");
+  if (plTW) plTW.value = plTotalW.toFixed(3);
+  if (plTV) plTV.value = plTotalV.toFixed(2);
+
+  // FOREIGN
+  let frTotalW = 0, frTotalV = 0;
+  document.querySelectorAll("#foreignTable tbody tr").forEach(tr => {
+    const qty   = num(tr.querySelector('input[data-t="foreign"][data-f="qty"]')?.value);
+    const unitW = num(tr.querySelector('input[data-t="foreign"][data-f="unitWeight"]')?.value);
+    const unitP = num(tr.querySelector('input[data-t="foreign"][data-f="unitPrice"]')?.value);
+    const disc  = num(tr.querySelector('input[data-t="foreign"][data-f="discount"]')?.value) / 100;
+
+    const wT = (qty * unitW) / 1000;
+    const v  = qty * unitP * (1 - disc);
+
+    const outW = tr.querySelector('input[data-out="frWeightT"]');
+    const outV = tr.querySelector('input[data-out="frValue"]');
+
+    if (outW) outW.value = wT.toFixed(3);
+    if (outV) outV.value = v.toFixed(2);
+
+    frTotalW += wT; frTotalV += v;
+  });
+
+  const frTW = document.getElementById("frTotalWeightT");
+  const frTV = document.getElementById("frTotalValue");
+  if (frTW) frTW.value = frTotalW.toFixed(3);
+  if (frTV) frTV.value = frTotalV.toFixed(2);
+
+  // QUICK
+  let qTotalV = 0;
+  document.querySelectorAll("#quickTable tbody tr").forEach(tr => {
+    const qtyNeed   = num(tr.querySelector('input[data-t="quick"][data-f="qtyNeed"]')?.value);
+    const salePrice = num(tr.querySelector('input[data-t="quick"][data-f="salePrice"]')?.value);
+    const transport = num(tr.querySelector('input[data-t="quick"][data-f="transport"]')?.value);
+    const assembly  = num(tr.querySelector('input[data-t="quick"][data-f="assembly"]')?.value);
+
+    const v = (qtyNeed * salePrice) + transport + assembly;
+
+    const outV = tr.querySelector('input[data-out="qValue"]');
+    if (outV) outV.value = v.toFixed(2);
+
+    qTotalV += v;
+  });
+
+  const qTV = document.getElementById("qTotalValue");
+  if (qTV) qTV.value = qTotalV.toFixed(2);
+renderOfferSummary();
+
+}
+
+
+
 
   // zbieranie inputów do state
 function bindInputs() {
@@ -447,8 +639,39 @@ window.saveAll = async function() {
       offerType: document.getElementById("hdrOfferType")?.value ?? "",
       plItems: state.pl,
       foreignItems: state.foreign,
-      quickOffer: state.quick
+      quickOffer: state.quick,
     };
+
+    payload.summary = {
+  fxEur: document.getElementById("sum_fx_eur")?.value ?? "",
+  fxPln: document.getElementById("sum_fx_pln")?.value ?? "",
+  fxSrv: document.getElementById("sum_fx_srv")?.value ?? "",
+  fxMnt: document.getElementById("sum_fx_mnt")?.value ?? "",
+  fxTrn: document.getElementById("sum_fx_trn")?.value ?? "",
+
+  // wartości EUR/PLN są readonly, ale zapisujemy je tak czy siak:
+  valEur: document.getElementById("sum_val_eur")?.value ?? "",
+  valPln: document.getElementById("sum_val_pln")?.value ?? "",
+  valSrv: document.getElementById("sum_val_srv")?.value ?? "",
+  valMnt: document.getElementById("sum_val_mnt")?.value ?? "",
+  valTrn: document.getElementById("sum_val_trn")?.value ?? "",
+
+  marginEur: document.getElementById("sum_margin_eur")?.value ?? "",
+  marginPln: document.getElementById("sum_margin_pln")?.value ?? "",
+  marginSrv: document.getElementById("sum_margin_srv")?.value ?? "",
+  marginMnt: document.getElementById("sum_margin_mnt")?.value ?? "",
+  marginTrn: document.getElementById("sum_margin_trn")?.value ?? "",
+
+  saleEur: document.getElementById("sum_sale_eur")?.value ?? "",
+  salePln: document.getElementById("sum_sale_pln")?.value ?? "",
+  saleSrv: document.getElementById("sum_sale_srv")?.value ?? "",
+  saleMnt: document.getElementById("sum_sale_mnt")?.value ?? "",
+  saleTrn: document.getElementById("sum_sale_trn")?.value ?? "",
+
+  saleTotal: document.getElementById("sum_sale_total")?.value ?? "",
+  marginTotal: document.getElementById("sum_margin_total")?.value ?? ""
+};
+
 
     console.log("SAVE payload:", payload);
 
@@ -555,6 +778,7 @@ window.saveAll = async function() {
 (async function init() {
   await loadClosedProducts();
   bindInputs();
+  attachInputListeners(document)
   renderComputed();
 
   const btn = document.getElementById("saveAllBtn");
@@ -563,11 +787,38 @@ window.saveAll = async function() {
     return;
   }
 
+const printBtn = document.getElementById("printPdfBtn");
+if (printBtn) {
+  printBtn.addEventListener("click", async () => {
+    // najpierw zapisujemy wszystko, żeby PDF miał aktualne dane
+    await window.saveAll();
+    window.open(`/calculations/${calcId}/pdf`, "_blank");
+  });
+}
+
   btn.addEventListener("click", () => {
     console.log("Klik: Zapisz wszystko");
     window.saveAll(); // wywołujemy globalną funkcję
   });
 })();
+
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("DOMContentLoaded → renderComputed()");
+    renderComputed();
+  });
+
+  document.addEventListener("input", (e) => {
+    if (e.target && e.target.matches('input[data-t]')) {
+      console.log("INPUT CHANGE → renderComputed()");
+      renderComputed();
+    }
+  });
+
+document.addEventListener("input", (e) => {
+  if (e.target && e.target.closest("#offerSummary")) {
+    renderOfferSummary();
+  }
+});
 
 </script>
 

@@ -185,14 +185,30 @@
 <div class="card">
   <h2>Szybka oferta</h2>
 
+  <!-- <datalist id="closedProductsList"></datalist> -->
+<!-- <datalist id="widthList"></datalist>
+<datalist id="lengthList"></datalist>
+<datalist id="heightList"></datalist>
+<datalist id="thicknessList"></datalist> -->
+
+
+  <!-- elementy -->
   <datalist id="closedProductsList"></datalist>
+
+  <!-- producenci -->
+  <datalist id="producersList"></datalist>
 
   <table class="table" id="quickTable">
     <thead>
       <tr>
         <th>Producent</th>
         <th>Element</th>
-        <th>Wymiary (mm)</th>
+
+        <th>S</th>
+        <th>L</th>
+        <th>W</th>
+        <th>G</th>
+
         <th>Ilość zapot.</th>
         <th>Ilość magazyn</th>
         <th>Cena sprzedaży</th>
@@ -201,20 +217,52 @@
         <th>Wartość (auto)</th>
       </tr>
     </thead>
+
     <tbody>
-      <% (quickOffer.length ? quickOffer : [{producer:"",element:"",dims:"",qtyNeed:"",qtyStock:"",salePrice:"",transport:"",assembly:""}]).forEach((it, idx) => { %>
+      <% (quickOffer.length ? quickOffer : [{
+        producer:"",
+        element:"",
+        s:"",
+        l:"",
+        w:"",
+        g:"",
+        qtyNeed:"",
+        qtyStock:"",
+        salePrice:"",
+        transport:"",
+        assembly:""
+      }]).forEach((it, idx) => { %>
+
         <tr>
-          <td><input data-t="quick" data-i="<%= idx %>" data-f="producer" value="<%= it.producer ?? '' %>"></td>
-
+          <!-- PRODUCENT (z CSV) -->
           <td>
-<input list="closedProductsList"
-       data-t="quick" data-i="<%= idx %>" data-f="element"
-       value="<%= it.element ?? '' %>">
-
+            <input list="producersList"
+                   data-t="quick" data-i="<%= idx %>" data-f="producer"
+                   value="<%= it.producer ?? '' %>">
           </td>
 
-          <td><input data-t="quick" data-i="<%= idx %>" data-f="dims" value="<%= it.dims ?? '' %>" readonly></td>
+          <!-- ELEMENT (z closed-products) -->
+          <td>
+            <input list="closedProductsList"
+                   data-t="quick" data-i="<%= idx %>" data-f="element"
+                   value="<%= it.element ?? '' %>">
+          </td>
 
+          <!-- WYMIARY jako SELECT -->
+          <td>
+            <select data-t="quick" data-i="<%= idx %>" data-f="s"></select>
+          </td>
+          <td>
+            <select data-t="quick" data-i="<%= idx %>" data-f="l"></select>
+          </td>
+          <td>
+            <select data-t="quick" data-i="<%= idx %>" data-f="w"></select>
+          </td>
+          <td>
+            <select data-t="quick" data-i="<%= idx %>" data-f="g"></select>
+          </td>
+
+          <!-- reszta ręcznie -->
           <td><input data-t="quick" data-i="<%= idx %>" data-f="qtyNeed" value="<%= it.qtyNeed ?? '' %>"></td>
           <td><input data-t="quick" data-i="<%= idx %>" data-f="qtyStock" value="<%= it.qtyStock ?? '' %>"></td>
 
@@ -222,23 +270,22 @@
           <td><input data-t="quick" data-i="<%= idx %>" data-f="transport" value="<%= it.transport ?? '' %>"></td>
           <td><input data-t="quick" data-i="<%= idx %>" data-f="assembly" value="<%= it.assembly ?? '' %>"></td>
 
-          <!-- <td class="muted" data-out="qValue" data-i="<%= idx %>"></td> -->
           <td><input class="out" readonly data-out="qValue" value=""></td>
-
-
         </tr>
       <% }) %>
-
     </tbody>
-      <tfoot>
-  <tr>
-    <td colspan="8" style="text-align:right;"><b>SUMA:</b></td>
-    <!-- <td class="muted" id="qTotalValue"></td> -->
-     <td><input class="out" readonly id="qTotalValue" value=""></td>
 
-  </tr>
-</tfoot>    
+    <tfoot>
+      <tr>
+        <td colspan="11" style="text-align:right;"><b>SUMA:</b></td>
+        <td><input class="out" readonly id="qTotalValue" value=""></td>
+      </tr>
+    </tfoot>
   </table>
+
+  <button class="btn" type="button" onclick="addRow('quick')">Dodaj wiersz</button>
+</div>
+
 
         <button class="btn" type="button" onclick="addRow('quick')">Dodaj wiersz</button>
       </div>
@@ -268,8 +315,8 @@
     <option value="Uproszczona" <%= (row.offer_type === 'Uproszczona' ? 'selected' : '') %>>Uproszczona</option>
   </select>
 
-<button class="btn" type="button" id="saveAllBtn">Zapisz wszystko</button>
-<span id="saveInfo" class="muted" style="margin-left:10px;"></span>
+<button class="btn" type="button" id="saveAllBtnTop">Zapisz wszystko</button>
+<span id="saveInfoTop" class="muted" style="margin-left:10px;"></span>
 </div>
 
         </form>
@@ -318,7 +365,7 @@
       <tr>
         <td><b>Montaż</b></td>
         <td><input id="sum_fx_mnt" value="<%= summary.fxMnt ?? '' %>"></td>
-        <td><input id="sum_val_mnt" value="<%= summary.valMnt ?? '' %>"></td>
+        <td><input id="sum_val_mnt" readonly value="<%= summary.valMnt ?? '' %>"></td>
         <td><input id="sum_margin_mnt" value="<%= summary.marginMnt ?? '' %>"></td>
         <td><input id="sum_sale_mnt" value="<%= summary.saleMnt ?? '' %>"></td>
       </tr>
@@ -326,7 +373,7 @@
       <tr>
         <td><b>Transport</b></td>
         <td><input id="sum_fx_trn" value="<%= summary.fxTrn ?? '' %>"></td>
-        <td><input id="sum_val_trn" value="<%= summary.valTrn ?? '' %>"></td>
+        <td><input id="sum_val_trn" readonly value="<%= summary.valTrn ?? '' %>"></td>
         <td><input id="sum_margin_trn" value="<%= summary.marginTrn ?? '' %>"></td>
         <td><input id="sum_sale_trn" value="<%= summary.saleTrn ?? '' %>"></td>
       </tr>
@@ -357,28 +404,56 @@
 
   <script>
 function renderOfferSummary() {
-  const frVal = num(document.getElementById("frTotalValue")?.value); // EUR (z tabeli zagranica)
-  const plVal = num(document.getElementById("plTotalValue")?.value); // PLN (z tabeli PL)
+  const frVal = num(document.getElementById("frTotalValue")?.value); // EUR
+  const plVal = num(document.getElementById("plTotalValue")?.value); // PLN (PL tabela)
 
-  const valEur = document.getElementById("sum_val_eur");
-  const valPln = document.getElementById("sum_val_pln");
-  if (valEur) valEur.value = frVal.toFixed(2);
-  if (valPln) valPln.value = plVal.toFixed(2);
+  // EUR w podsumowaniu
+  const valEurEl = document.getElementById("sum_val_eur");
+  if (valEurEl) valEurEl.value = frVal.toFixed(2);
 
+  // szybka oferta: towar + transport + montaż
+  let qGoods = 0;
+  let qTotalTransport = 0;
+  let qTotalAssembly = 0;
+
+  document.querySelectorAll("#quickTable tbody tr").forEach(tr => {
+    const qtyNeed = num(tr.querySelector('input[data-t="quick"][data-f="qtyNeed"]')?.value);
+    const salePrice = num(tr.querySelector('input[data-t="quick"][data-f="salePrice"]')?.value);
+    const transport = num(tr.querySelector('input[data-t="quick"][data-f="transport"]')?.value);
+    const assembly  = num(tr.querySelector('input[data-t="quick"][data-f="assembly"]')?.value);
+
+    qGoods += qtyNeed * salePrice;
+    qTotalTransport += transport;
+    qTotalAssembly += assembly;
+  });
+
+  // PLN w podsumowaniu = PL tabela + towar z szybkiej oferty (bez transportu/montażu)
+  const plTotal = plVal + qGoods; //+ qTotalTransport + qTotalAssembly;
+
+  const valPlnEl = document.getElementById("sum_val_pln");
+  if (valPlnEl) valPlnEl.value = plTotal.toFixed(2);
+
+  // Transport i montaż w podsumowaniu z szybkiej oferty
+  const trnEl = document.getElementById("sum_val_trn");
+  const mntEl = document.getElementById("sum_val_mnt");
+  if (trnEl) trnEl.value = qTotalTransport.toFixed(2);
+  if (mntEl) mntEl.value = qTotalAssembly.toFixed(2);
+
+  // SUMA sprzedaży (wpisywana ręcznie)
   const saleIds = ["sum_sale_eur","sum_sale_pln","sum_sale_srv","sum_sale_mnt","sum_sale_trn"];
   const totalSale = saleIds.map(id => num(document.getElementById(id)?.value)).reduce((a,b)=>a+b,0);
 
   const totalSaleEl = document.getElementById("sum_sale_total");
   if (totalSaleEl) totalSaleEl.value = totalSale.toFixed(2);
 
+  // marża końcowa
   const fxEur = num(document.getElementById("sum_fx_eur")?.value);
-
   const cost =
     (frVal * fxEur) +
-    plVal +
+    plTotal +
     num(document.getElementById("sum_val_srv")?.value) +
-    num(document.getElementById("sum_val_mnt")?.value) +
-    num(document.getElementById("sum_val_trn")?.value);
+    qTotalAssembly +
+    qTotalTransport;
 
   const marginTotalEl = document.getElementById("sum_margin_total");
   if (marginTotalEl) {
@@ -386,6 +461,60 @@ function renderOfferSummary() {
     marginTotalEl.value = m.toFixed(2);
   }
 }
+
+    
+// function renderOfferSummary() {
+//   const frVal = num(document.getElementById("frTotalValue")?.value); // EUR (z tabeli zagranica)
+//   const plVal = num(document.getElementById("plTotalValue")?.value); // PLN (z tabeli PL)
+
+//   const valEur = document.getElementById("sum_val_eur");
+//   const valPln = document.getElementById("sum_val_pln");
+// // suma wartości towaru z "Szybka oferta" (TYLKO qtyNeed * salePrice)
+// let qGoods = 0;
+// document.querySelectorAll("#quickTable tbody tr").forEach(tr => {
+//   const qtyNeed = num(tr.querySelector('input[data-t="quick"][data-f="qtyNeed"]')?.value);
+//   const salePrice = num(tr.querySelector('input[data-t="quick"][data-f="salePrice"]')?.value);
+//   qGoods += qtyNeed * salePrice;
+// });
+
+// // PLN w podsumowaniu = PL tabela + szybka oferta (towar)
+// const plTotal = plVal + qGoods;
+
+// const valPlnEl = document.getElementById("sum_val_pln");
+// if (valPlnEl) valPlnEl.value = plTotal.toFixed(2);
+//   document.getElementById("sum_val_trn").value = qTotalTransport.toFixed(2);
+// document.getElementById("sum_val_mnt").value = qTotalAssembly.toFixed(2);
+
+//   if (valEur) valEur.value = frVal.toFixed(2);
+//   if (valPln) valPln.value = plVal.toFixed(2);
+
+//   const saleIds = ["sum_sale_eur","sum_sale_pln","sum_sale_srv","sum_sale_mnt","sum_sale_trn"];
+//   const totalSale = saleIds.map(id => num(document.getElementById(id)?.value)).reduce((a,b)=>a+b,0);
+
+//   const totalSaleEl = document.getElementById("sum_sale_total");
+//   if (totalSaleEl) totalSaleEl.value = totalSale.toFixed(2);
+
+//   const fxEur = num(document.getElementById("sum_fx_eur")?.value);
+
+//   // const cost =
+//   //   (frVal * fxEur) +
+//   //   plVal +
+//   //   num(document.getElementById("sum_val_srv")?.value) +
+//   //   num(document.getElementById("sum_val_mnt")?.value) +
+//   //   num(document.getElementById("sum_val_trn")?.value);
+
+// const cost = (frVal * fxEur) + plTotal
+//   + num(document.getElementById("sum_val_srv")?.value)
+//   + num(document.getElementById("sum_val_mnt")?.value)
+//   + num(document.getElementById("sum_val_trn")?.value);
+    
+
+//   const marginTotalEl = document.getElementById("sum_margin_total");
+//   if (marginTotalEl) {
+//     const m = totalSale > 0 ? ((totalSale - cost) / totalSale) * 100 : 0;
+//     marginTotalEl.value = m.toFixed(2);
+//   }
+// }
     
   function readJson(id) {
     const el = document.getElementById(id);
@@ -408,6 +537,89 @@ function renderOfferSummary() {
   //   quick: <%- JSON.stringify(quickOffer) %>,
   //   closedProducts: []
   // };
+
+function splitDims(val) {
+  if (!val) return [];
+  return String(val)
+    .split("/")
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+// function setSelectOptions(selectEl, options, currentValue) {
+
+  function setSelectOptions(sel, opts, current) {
+  if (!sel) return;
+
+  const cur = (current ?? "").toString().trim();
+
+  sel.innerHTML = "";
+
+  const empty = document.createElement("option");
+  empty.value = "";
+  empty.textContent = "";
+  sel.appendChild(empty);
+
+  for (const raw of (opts || [])) {
+    const v = (raw ?? "").toString().trim();
+    if (!v) continue;
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    sel.appendChild(opt);
+  }
+
+  // ustaw wybraną wartość (tylko jeśli istnieje w opcjach)
+  const has = Array.from(sel.options).some(o => o.value === cur);
+  sel.value = has ? cur : "";
+}
+
+  // if (!selectEl) return;
+
+  // // zapamiętaj aktualną wartość, jeśli nie podana
+  // const cur = currentValue ?? selectEl.value ?? "";
+
+  // selectEl.innerHTML = "";
+
+  // // pusta opcja
+  // const empty = document.createElement("option");
+  // empty.value = "";
+  // empty.textContent = "";
+  // selectEl.appendChild(empty);
+
+  // for (const o of options) {
+  //   const opt = document.createElement("option");
+  //   opt.value = o;
+  //   opt.textContent = o;
+  //   selectEl.appendChild(opt);
+  // }
+
+  // // ustaw current jeśli istnieje w opcjach
+  // if (cur && options.includes(cur)) selectEl.value = cur;
+  // else selectEl.value = "";
+// }
+
+function fillQuickDimSelects(rowIndex, productRow) {
+  // productRow = rekord z closed-products.csv dla wybranego elementu
+  const sSel = document.querySelector(`select[data-t="quick"][data-i="${rowIndex}"][data-f="s"]`);
+  const lSel = document.querySelector(`select[data-t="quick"][data-i="${rowIndex}"][data-f="l"]`);
+  const wSel = document.querySelector(`select[data-t="quick"][data-i="${rowIndex}"][data-f="w"]`);
+  const gSel = document.querySelector(`select[data-t="quick"][data-i="${rowIndex}"][data-f="g"]`);
+
+  const sOpts = splitDims(productRow?.width);
+  const lOpts = splitDims(productRow?.length);
+  const wOpts = splitDims(productRow?.height);
+  const gOpts = splitDims(productRow?.thickness);
+
+  // wartości ze stanu (żeby po odświeżeniu nie znikały)
+  const st = state.quick[rowIndex] || {};
+
+  setSelectOptions(sSel, sOpts, st.s ?? "");
+  setSelectOptions(lSel, lOpts, st.l ?? "");
+  setSelectOptions(wSel, wOpts, st.w ?? "");
+  setSelectOptions(gSel, gOpts, st.g ?? "");
+}
+
 
   function num(x) {
     if (x === null || x === undefined) return 0;
@@ -480,6 +692,17 @@ function renderComputed() {
     if (outV) outV.value = v.toFixed(2);
 
     qTotalV += v;
+    let qTotalTransport = 0;
+let qTotalAssembly = 0;
+
+document.querySelectorAll("#quickTable tbody tr").forEach(tr => {
+  const transport = num(tr.querySelector('input[data-t="quick"][data-f="transport"]')?.value);
+  const assembly  = num(tr.querySelector('input[data-t="quick"][data-f="assembly"]')?.value);
+
+  qTotalTransport += transport;
+  qTotalAssembly += assembly;
+});
+
   });
 
   const qTV = document.getElementById("qTotalValue");
@@ -521,29 +744,76 @@ function bindInputs() {
       state[t][i][f] = inp.value;
 
       // auto-dims dla szybkiej oferty
-      if (t === "quick" && f === "element") {
-        const chosen = (inp.value || "").trim();
-        const p = state.closedProducts.find(x => x.element === chosen);
-        const dimsInput = document.querySelector(`input[data-t="quick"][data-i="${i}"][data-f="dims"]`);
+      // if (t === "quick" && f === "element") {
+      //   const chosen = (inp.value || "").trim();
+      //   const p = state.closedProducts.find(x => x.element === chosen);
+      //   const dimsInput = document.querySelector(`input[data-t="quick"][data-i="${i}"][data-f="dims"]`);
 
-        if (p && dimsInput) {
-          const parts = [];
-          if (p.width) parts.push(`S:${p.width}`);
-          if (p.length) parts.push(`L:${p.length}`);
-          if (p.height) parts.push(`W:${p.height}`);
-          if (p.thickness) parts.push(`G:${p.thickness}`);
-          const dims = parts.join(" ");
-          dimsInput.value = dims;
-          state.quick[i].dims = dims;
-        } else if (dimsInput) {
-          dimsInput.value = "";
-          state.quick[i].dims = "";
-        }
-      }
+      //   // if (p && dimsInput) {
+      //   //   const parts = [];
+      //   //   if (p.width) parts.push(`S:${p.width}`);
+      //   //   if (p.length) parts.push(`L:${p.length}`);
+      //   //   if (p.height) parts.push(`W:${p.height}`);
+      //   //   if (p.thickness) parts.push(`G:${p.thickness}`);
+      //   //   const dims = parts.join(" ");
+      //   //   dimsInput.value = dims;
+      //   //   state.quick[i].dims = dims;
+      //   // } else if (dimsInput) {
+      //   //   dimsInput.value = "";
+      //   //   state.quick[i].dims = "";
+      //   // }
+      // }
 
       renderComputed();
     });
   });
+
+    rootEl.querySelectorAll("select[data-t]").forEach(sel => {
+    sel.addEventListener("change", () => {
+      const t = sel.dataset.t;
+      const i = parseInt(sel.dataset.i, 10);
+      const f = sel.dataset.f;
+
+      if (!state[t][i]) state[t][i] = {};
+      state[t][i][f] = sel.value;
+
+      renderComputed();
+    });
+  });
+
+  // element w quick: po zmianie elementu uzupełnij selecty wymiarów
+  rootEl.querySelectorAll('input[data-t="quick"][data-f="element"]').forEach(inp => {
+    inp.addEventListener("input", () => {
+      const i = parseInt(inp.dataset.i, 10);
+      const chosen = (inp.value || "").trim();
+      const p = state.closedProducts.find(x => (x.element || "").trim() === chosen);
+
+      if (!state.quick[i]) state.quick[i] = {};
+      state.quick[i].element = inp.value;
+
+      // wyczyść poprzednie wybory wymiarów przy zmianie elementu
+      state.quick[i].s = "";
+      state.quick[i].l = "";
+      state.quick[i].w = "";
+      state.quick[i].g = "";
+
+      fillQuickDimSelects(i, p);
+      renderComputed();
+    });
+  });
+  // zapamiętuj wybór rozmiarów z <select>
+  rootEl.querySelectorAll('select[data-t="quick"]').forEach(sel => {
+    sel.addEventListener("change", () => {
+      const i = parseInt(sel.dataset.i, 10);
+      const f = sel.dataset.f;
+
+      if (!state.quick[i]) state.quick[i] = {};
+      state.quick[i][f] = (sel.value || "").trim();
+
+      renderComputed();
+    });
+  });
+
 }
 
 function addRowDom(type) {
@@ -589,25 +859,58 @@ function addRowDom(type) {
     tbody.appendChild(tr);
   }
 
-  if (type === "quick") {
-    rowIndex = state.quick.length;
-    state.quick.push({producer:"",element:"",dims:"",qtyNeed:"",qtyStock:"",salePrice:"",transport:"",assembly:""});
-    tbody = document.querySelector("#quickTable tbody");
+if (type === "quick") {
+  rowIndex = state.quick.length;
+  state.quick.push({
+    producer: "",
+    element: "",
+    s: "",
+    l: "",
+    w: "",
+    g: "",
+    qtyNeed: "",
+    qtyStock: "",
+    salePrice: "",
+    transport: "",
+    assembly: ""
+  });
 
-    tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><input data-t="quick" data-i="${rowIndex}" data-f="producer" value=""></td>
-      <td><input list="closedProductsList" data-t="quick" data-i="${rowIndex}" data-f="element" value=""></td>
-      <td><input data-t="quick" data-i="${rowIndex}" data-f="dims" value="" readonly></td>
-      <td><input data-t="quick" data-i="${rowIndex}" data-f="qtyNeed" value=""></td>
-      <td><input data-t="quick" data-i="${rowIndex}" data-f="qtyStock" value=""></td>
-      <td><input data-t="quick" data-i="${rowIndex}" data-f="salePrice" value=""></td>
-      <td><input data-t="quick" data-i="${rowIndex}" data-f="transport" value=""></td>
-      <td><input data-t="quick" data-i="${rowIndex}" data-f="assembly" value=""></td>
-      <td class="muted" data-out="qValue" data-i="${rowIndex}"></td>
-    `;
-    tbody.appendChild(tr);
-  }
+  tbody = document.querySelector("#quickTable tbody");
+
+  tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>
+      <input list="producersList" data-t="quick" data-i="${rowIndex}" data-f="producer" value="">
+    </td>
+    <td>
+      <input list="closedProductsList" data-t="quick" data-i="${rowIndex}" data-f="element" value="">
+    </td>
+
+    <td><select data-t="quick" data-i="${rowIndex}" data-f="s"></select></td>
+    <td><select data-t="quick" data-i="${rowIndex}" data-f="l"></select></td>
+    <td><select data-t="quick" data-i="${rowIndex}" data-f="w"></select></td>
+    <td><select data-t="quick" data-i="${rowIndex}" data-f="g"></select></td>
+
+    <td><input data-t="quick" data-i="${rowIndex}" data-f="qtyNeed" value=""></td>
+    <td><input data-t="quick" data-i="${rowIndex}" data-f="qtyStock" value=""></td>
+    <td><input data-t="quick" data-i="${rowIndex}" data-f="salePrice" value=""></td>
+    <td><input data-t="quick" data-i="${rowIndex}" data-f="transport" value=""></td>
+    <td><input data-t="quick" data-i="${rowIndex}" data-f="assembly" value=""></td>
+
+    <td><input class="out" readonly data-out="qValue" value=""></td>
+  `;
+
+  tbody.appendChild(tr);
+
+  // podepnij eventy do nowego wiersza
+  attachInputListeners(tr);
+
+  // jeżeli element już wybrany (tu pusty), to wypełnij selecty
+  fillQuickDimSelects(rowIndex, null);
+
+  renderComputed();
+}
+
 
   // podepnij eventy tylko do nowego wiersza
   attachInputListeners(tr);
@@ -620,7 +923,9 @@ window.addRow = function(type) {
 };
 
 window.saveAll = async function() {
-  const info = document.getElementById("saveInfo");
+  // const info = document.getElementById("saveInfo");
+  const info = document.getElementById("saveInfo") || document.getElementById("saveInfoTop");
+
   info.textContent = "Zapisuję...";
 
   try {
@@ -710,6 +1015,23 @@ window.saveAll = async function() {
   //   location.reload();
   // }
 
+  async function loadProducers() {
+  const r = await fetch("/api/producers");
+  const data = await r.json();
+  if (!data.ok) return;
+
+  const dl = document.getElementById("producersList");
+  if (!dl) return;
+
+  dl.innerHTML = "";
+  for (const name of data.producers) {
+    const opt = document.createElement("option");
+    opt.value = name;
+    dl.appendChild(opt);
+  }
+}
+
+
   async function loadClosedProducts() {
     const r = await fetch("/api/closed-products");
     const data = await r.json();
@@ -724,29 +1046,37 @@ window.saveAll = async function() {
       opt.value = p.element;
       dl.appendChild(opt);
     }
+      // po załadowaniu produktów uzupełnij dropdowny wymiarów w istniejących wierszach
+  document.querySelectorAll('#quickTable tbody tr').forEach((tr, idx) => {
+    const elInput = tr.querySelector('input[data-t="quick"][data-f="element"]');
+    const chosen = (elInput?.value || "").trim();
+    const p = state.closedProducts.find(x => (x.element || "").trim() === chosen);
+    fillQuickDimSelects(idx, p);
+  });
+
   }
 
   // auto-uzupełnienie quick dims po wybraniu elementu
-  window.onQuickElementInput = function(idx) {
-    const elInput = document.querySelector(`input[data-t="quick"][data-i="${idx}"][data-f="element"]`);
-    const dimsInput = document.querySelector(`input[data-t="quick"][data-i="${idx}"][data-f="dims"]`);
-    const chosen = (elInput?.value || "").trim();
-    const p = state.closedProducts.find(x => x.element === chosen);
-    if (p && dimsInput) {
-      // sklej wymiary “jak się da”
-      const parts = [];
-      if (p.width) parts.push(`S:${p.width}`);
-      if (p.length) parts.push(`L:${p.length}`);
-      if (p.height) parts.push(`W:${p.height}`);
-      if (p.thickness) parts.push(`G:${p.thickness}`);
-      const dims = parts.join(" ");
-      dimsInput.value = dims;
+  // window.onQuickElementInput = function(idx) {
+  //   const elInput = document.querySelector(`input[data-t="quick"][data-i="${idx}"][data-f="element"]`);
+  //   const dimsInput = document.querySelector(`input[data-t="quick"][data-i="${idx}"][data-f="dims"]`);
+  //   const chosen = (elInput?.value || "").trim();
+  //   const p = state.closedProducts.find(x => x.element === chosen);
+  //   if (p && dimsInput) {
+  //     // sklej wymiary “jak się da”
+  //     const parts = [];
+  //     if (p.width) parts.push(`S:${p.width}`);
+  //     if (p.length) parts.push(`L:${p.length}`);
+  //     if (p.height) parts.push(`W:${p.height}`);
+  //     if (p.thickness) parts.push(`G:${p.thickness}`);
+  //     const dims = parts.join(" ");
+  //     dimsInput.value = dims;
 
-      if (!state.quick[idx]) state.quick[idx] = {};
-      state.quick[idx].dims = dims;
-    }
-    renderComputed();
-  };
+  //     if (!state.quick[idx]) state.quick[idx] = {};
+  //     state.quick[idx].dims = dims;
+  //   }
+  //   renderComputed();
+  // };
 
   // async function saveTables() {
   //   const info = document.getElementById("saveInfo");
@@ -777,29 +1107,34 @@ window.saveAll = async function() {
 
 (async function init() {
   await loadClosedProducts();
+  await loadProducers();
+
   bindInputs();
-  attachInputListeners(document)
+  attachInputListeners(document);
+
   renderComputed();
 
-  const btn = document.getElementById("saveAllBtn");
-  if (!btn) {
-    console.error("Brak przycisku #saveAllBtn");
-    return;
-  }
+const btns = [document.getElementById("saveAllBtn"), document.getElementById("saveAllBtnTop")].filter(Boolean);
+if (!btns.length) {
+  console.error("Brak przycisków zapisu");
+  return;
+}
 
+btns.forEach(b => {
+  b.addEventListener("click", () => {
+    console.log("Klik: Zapisz");
+    window.saveAll();
+  });
 const printBtn = document.getElementById("printPdfBtn");
 if (printBtn) {
   printBtn.addEventListener("click", async () => {
-    // najpierw zapisujemy wszystko, żeby PDF miał aktualne dane
-    await window.saveAll();
+    await window.saveAll(); // żeby PDF miał świeże dane
     window.open(`/calculations/${calcId}/pdf`, "_blank");
   });
 }
 
-  btn.addEventListener("click", () => {
-    console.log("Klik: Zapisz wszystko");
-    window.saveAll(); // wywołujemy globalną funkcję
-  });
+});
+
 })();
 
 document.addEventListener("DOMContentLoaded", () => {

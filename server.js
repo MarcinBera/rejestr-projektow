@@ -34,6 +34,8 @@ app.use(
     cookie: { httpOnly: true }
   })
 );
+app.use(express.json());
+app.use(express.urlencoded({ extended: true}));
 
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
@@ -51,6 +53,116 @@ app.get("/", (req, res) => {
 
 app.use("/", authRoutes);
 app.use("/calculations", calculationRoutes);
+
+app.post("/calculations/:id/save", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { status, turnover, offerType, plItems, foreignItems, quickOffer, summary } = req.body || {};
+
+    const stmt = db.prepare(`
+      UPDATE calculations
+      SET
+        status = ?,
+        turnover = ?,
+        offer_type = ?,
+        pl_items_json = ?,
+        foreign_items_json = ?,
+        quick_offer_json = ?,
+        summary_json = ?
+      WHERE id = ?
+    `);
+
+    stmt.run(
+      status ?? null,
+      turnover ?? null,
+      offerType ?? null,
+      JSON.stringify(plItems ?? []),
+      JSON.stringify(foreignItems ?? []),
+      JSON.stringify(quickOffer ?? []),
+      JSON.stringify(summary ?? {}),
+      id
+    );
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("SAVE error:", e);
+    return res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});
+app.get("/calculations/:id/pdf", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    const row = db.prepare("SELECT * FROM calculations WHERE id = ?").get(id);
+    if (!row) return res.status(404).send("Not found");
+
+    const PDFDocument = require("pdfkit");
+    const doc = new PDFDocument({ margin: 30, size: "A4" });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="kalkulacja-${id}.pdf"`);
+
+    doc.pipe(res);
+
+    // MINIMALNY PDF (żeby sprawdzić, że działa)
+    doc.fontSize(16).text(`Kalkulacja #${id}`);
+    doc.moveDown();
+    doc.fontSize(10).text(`NIP: ${row.nip || ""}`);
+    doc.text(`Klient: ${row.company_name || ""}`);
+    doc.text(`Adres: ${row.company_address || ""}`);
+    doc.moveDown();
+
+    const quick = JSON.parse(row.quick_offer_json || "[]");
+    doc.fontSize(12).text("Szybka oferta:");
+    doc.moveDown(0.5);
+    doc.fontSize(9);
+    quick.forEach((it, idx) => {
+      doc.text(`${idx + 1}. ${it.element || ""} | ${it.producer || ""} | S:${it.s || ""} L:${it.l || ""} W:${it.w || ""} G:${it.g || ""}`);
+    });
+
+    doc.end();
+  } catch (e) {
+    console.error("PDF error:", e);
+    res.status(500).send(String(e.message || e));
+  }
+});
+
+// app.get("/calculations/:id/pdf", (req, res) => {
+//   try {
+//     const id = Number(req.params.id);
+
+//     const row = db.prepare("SELECT * FROM calculations WHERE id = ?").get(id);
+//     if (!row) return res.status(404).send("Not found");
+
+//     // Minimalny PDF żeby sprawdzić czy działa
+//     const PDFDocument = require("pdfkit");
+//     const doc = new PDFDocument({ margin: 30 });
+
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", `inline; filename="kalkulacja-${id}.pdf"`);
+
+//     doc.pipe(res);
+
+//     doc.fontSize(16).text(`Kalkulacja #${id}`);
+//     doc.moveDown();
+//     doc.fontSize(10).text(`NIP: ${row.nip || ""}`);
+//     doc.text(`Klient: ${row.company_name || ""}`);
+//     doc.text(`Adres: ${row.company_address || ""}`);
+//     doc.moveDown();
+
+//     doc.fontSize(12).text("Szybka oferta:");
+//     const quick = JSON.parse(row.quick_offer_json || "[]");
+//     quick.forEach((it, idx) => {
+//       doc.fontSize(9).text(`${idx + 1}. ${it.element || ""} | ${it.producer || ""} | qty: ${it.qtyNeed || ""}`);
+//     });
+
+//     doc.end();
+//   } catch (e) {
+//     console.error("PDF error:", e);
+//     return res.status(500).send(String(e.message || e));
+//   }
+// });
+
 app.use("/assignments", assignmentRoutes);
 app.use("/api", apiRoutes);
 

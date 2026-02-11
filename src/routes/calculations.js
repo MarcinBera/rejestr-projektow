@@ -314,6 +314,13 @@ WHERE id = ?
 const PDFDocument = require("pdfkit");
 
 router.get("/:id/pdf", requireAuth, (req, res) => {
+
+  const path = require("path");
+
+const FONT_REG = path.join(process.cwd(), "node_modules", "dejavu-fonts-ttf", "ttf", "DejaVuSans.ttf");
+const FONT_BOLD = path.join(process.cwd(), "node_modules", "dejavu-fonts-ttf", "ttf", "DejaVuSans-Bold.ttf");
+
+
   const db = getDb();
   const user = req.session.user;
   const id = parseInt(req.params.id, 10);
@@ -343,6 +350,10 @@ router.get("/:id/pdf", requireAuth, (req, res) => {
   res.setHeader("Content-Disposition", `inline; filename="kalkulacja-${row.id}.pdf"`);
 
   const doc = new PDFDocument({ margin: 30 });
+  doc.registerFont("REG", FONT_REG);
+doc.registerFont("BOLD", FONT_BOLD);
+doc.font("REG");
+
   doc.pipe(res);
 
   doc.fontSize(16).text(`Kalkulacja #${row.id}`, { align: "left" });

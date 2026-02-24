@@ -58,3 +58,22 @@ textarea { min-height: 100px; resize: vertical; }
   text-decoration: none;
   box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
+
+/* --- Rejestr kalkulacji: tabela nie może wychodzić poza kartę --- */
+.tableWrap { overflow-x: auto; }
+
+.tableFixed { table-layout: fixed; }
+
+/* zawijanie długich wartości w komórkach */
+.tableFixed th, .tableFixed td {
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* Obrót: wąska, nie rozpycha tabeli (to jest 11 kolumna w Twojej tabeli) */
+.tableFixed th:nth-child(11),
+.tableFixed td:nth-child(11) {
+  width: 110px;
+  text-align: right;
+  white-space: nowrap;
+}

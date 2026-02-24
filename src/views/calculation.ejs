@@ -460,6 +460,12 @@ function renderOfferSummary() {
     const m = totalSale > 0 ? ((totalSale - cost) / totalSale) * 100 : 0;
     marginTotalEl.value = m.toFixed(2);
   }
+  // przelicz ceny sprzedaży z marży (wartość * (1 + marża/100))
+  recalcSaleFromMargin("sum_val_eur", "sum_margin_eur", "sum_sale_eur");
+  recalcSaleFromMargin("sum_val_pln", "sum_margin_pln", "sum_sale_pln");
+  recalcSaleFromMargin("sum_val_srv", "sum_margin_srv", "sum_sale_srv");
+  recalcSaleFromMargin("sum_val_mnt", "sum_margin_mnt", "sum_sale_mnt");
+  recalcSaleFromMargin("sum_val_trn", "sum_margin_trn", "sum_sale_trn");  
 }
 
     
@@ -627,6 +633,32 @@ function fillQuickDimSelects(rowIndex, productRow) {
     const n = parseFloat(s);
     return Number.isFinite(n) ? n : 0;
   }
+
+function parseMarginPercent(v) {
+  // "30", "30%", " 30 %" => 30
+  let s = String(v ?? "").trim();
+  s = s.replace("%", "").trim();
+  s = s.replace(",", ".");
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatMarginPercent(v) {
+  let s = String(v ?? "").trim();
+  if (!s) return "";
+  s = s.replace("%", "").trim();
+  return s ? `${s}%` : "";
+}
+
+function recalcSaleFromMargin(valId, marginId, saleId) {
+  const val = num(document.getElementById(valId)?.value);
+  const m = parseMarginPercent(document.getElementById(marginId)?.value);
+  const saleEl = document.getElementById(saleId);
+  if (!saleEl) return;
+
+  const sale = val * (1 + (m / 100));
+  saleEl.value = sale.toFixed(2);
+}
 
 function renderComputed() {
   // PL
@@ -833,8 +865,8 @@ function addRowDom(type) {
       <td><input data-t="pl" data-i="${rowIndex}" data-f="unitPrice" value=""></td>
       <td><input data-t="pl" data-i="${rowIndex}" data-f="unitWeight" value=""></td>
       <td><input data-t="pl" data-i="${rowIndex}" data-f="rate" value="1.00"></td>
-      <td class="muted" data-out="plWeightT" data-i="${rowIndex}"></td>
-      <td class="muted" data-out="plValue" data-i="${rowIndex}"></td>
+<td><input class="out" readonly data-out="plWeightT" value=""></td>
+<td><input class="out" readonly data-out="plValue" value=""></td>
     `;
     tbody.appendChild(tr);
   }
@@ -853,8 +885,8 @@ function addRowDom(type) {
       <td><input data-t="foreign" data-i="${rowIndex}" data-f="unitPrice" value=""></td>
       <td><input data-t="foreign" data-i="${rowIndex}" data-f="unitWeight" value=""></td>
       <td><input data-t="foreign" data-i="${rowIndex}" data-f="discount" value="0"></td>
-      <td class="muted" data-out="frWeightT" data-i="${rowIndex}"></td>
-      <td class="muted" data-out="frValue" data-i="${rowIndex}"></td>
+<td><input class="out" readonly data-out="frWeightT" value=""></td>
+<td><input class="out" readonly data-out="frValue" value=""></td>
     `;
     tbody.appendChild(tr);
   }
@@ -1114,6 +1146,21 @@ window.saveAll = async function() {
 
   renderComputed();
 
+  // marże: licz na bieżąco + dopisz % po wyjściu z pola
+  ["eur","pln","srv","mnt","trn"].forEach(k => {
+    const mEl = document.getElementById(`sum_margin_${k}`);
+    if (!mEl) return;
+
+    mEl.addEventListener("input", () => {
+      renderOfferSummary(); // przeliczy sale i sumy
+    });
+
+    mEl.addEventListener("blur", () => {
+      mEl.value = formatMarginPercent(mEl.value);
+      renderOfferSummary();
+    });
+  });
+  
 const btns = [document.getElementById("saveAllBtn"), document.getElementById("saveAllBtnTop")].filter(Boolean);
 if (!btns.length) {
   console.error("Brak przycisków zapisu");
